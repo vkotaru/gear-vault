@@ -8,7 +8,8 @@ import {
   insertUserSchema, 
   insertItemSchema, 
   insertCheckoutHistorySchema,
-  updateCheckoutHistorySchema
+  updateCheckoutHistorySchema,
+  insertLocationSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import logger from "./logger";
@@ -242,6 +243,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Location routes
+  app.get("/api/locations", isAuthenticated, async (req, res) => {
+    logger.info("GET /api/locations - Fetching all locations with item counts");
+    try {
+      const locations = await storage.getAllLocationsWithItemCounts();
+      logger.debug(`GET /api/locations - Found ${locations.length} locations`);
+      res.json(locations);
+    } catch (error) {
+      logger.error("GET /api/locations - Error fetching locations", { error });
+      res.status(500).json({ message: "Failed to fetch locations" });
+    }
+  });
+
+  app.get("/api/locations/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    logger.info(`GET /api/locations/${id} - Fetching location by ID with item count`);
+    try {
+      const location = await storage.getLocationWithItemCount(id);
+      if (!location) {
+        logger.warn(`GET /api/locations/${id} - Location not found`);
+        return res.status(404).json({ message: "Location not found" });
+      }
+      logger.debug(`GET /api/locations/${id} - Location found`, { locationId: id });
+      res.json(location);
+    } catch (error) {
+      logger.error(`GET /api/locations/${id} - Error fetching location`, { error, locationId: id });
+      res.status(500).json({ message: "Failed to fetch location" });
+    }
+  });
+
+  app.post("/api/locations", isAuthenticated, async (req, res) => {
+    logger.info("POST /api/locations - Creating new location");
+    try {
+      const validatedLocation = insertLocationSchema.parse(req.body);
+      const location = await storage.createLocation(validatedLocation);
+      logger.info(`POST /api/locations - Location created successfully with ID ${location.id}`);
+      res.status(201).json(location);
+    } catch (error) {
+      logger.error("POST /api/locations - Error creating location", { error });
+      res.status(400).json({ message: "Invalid location data", error });
+    }
+  });
+
+  app.put("/api/locations/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    logger.info(`PUT /api/locations/${id} - Updating location`);
+    try {
+      const existingLocation = await storage.getLocation(id);
+      
+      if (!existingLocation) {
+        logger.warn(`PUT /api/locations/${id} - Location not found`);
+        return res.status(404).json({ message: "Location not found" });
+      }
+      
+      const validatedLocation = insertLocationSchema.parse(req.body);
+      const updatedLocation = await storage.updateLocation(id, validatedLocation);
+      
+      logger.info(`PUT /api/locations/${id} - Location updated successfully`);
+      res.json(updatedLocation);
+    } catch (error) {
+      logger.error(`PUT /api/locations/${id} - Error updating location`, { error, locationId: id });
+      res.status(400).json({ message: "Failed to update location", error });
+    }
+  });
+
+  app.delete("/api/locations/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    logger.info(`DELETE /api/locations/${id} - Deleting location`);
+    try {
+      const success = await storage.deleteLocation(id);
+      
+      if (!success) {
+        logger.warn(`DELETE /api/locations/${id} - Location not found or has associated items`);
+        return res.status(400).json({ 
+          message: "Cannot delete location. It may not exist or has items associated with it." 
+        });
+      }
+      
+      logger.info(`DELETE /api/locations/${id} - Location deleted successfully`);
+      res.json({ success });
+    } catch (error) {
+      logger.error(`DELETE /api/locations/${id} - Error deleting location`, { error, locationId: id });
+      res.status(500).json({ message: "Failed to delete location" });
     }
   });
 
