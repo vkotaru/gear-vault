@@ -33,7 +33,27 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Create a default admin user if none exists
+async function ensureAdminUser() {
+  try {
+    const adminUser = await storage.getUserByUsername('admin');
+    if (!adminUser) {
+      const defaultPassword = await hashPassword('password');
+      await storage.createUser({
+        username: 'admin',
+        password: defaultPassword
+      });
+      console.log('Default admin user created with username: admin, password: password');
+    }
+  } catch (error) {
+    console.error('Error creating default admin user:', error);
+  }
+}
+
 export function setupAuth(app: Express) {
+  // Create default admin user
+  ensureAdminUser();
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "gearshare-secret",
     resave: false,

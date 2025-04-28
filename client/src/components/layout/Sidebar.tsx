@@ -1,119 +1,115 @@
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
-  Clock, 
-  User,
+import { cn } from "@/lib/utils";
+import {
+  Home,
+  Package,
+  UserCircle,
+  Share2,
+  Calendar,
   Settings,
-  HelpCircle,
-  LogOut
+  Map,
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
-import { useAuth } from "@/lib/authContext";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { logoutMutation } = useAuth();
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
-
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: <LayoutDashboard className="h-5 w-5 mr-3" /> },
-    { name: "All Gear", path: "/all-gear", icon: <Package className="h-5 w-5 mr-3" /> },
-    { name: "My Gear", path: "/my-gear", icon: <User className="h-5 w-5 mr-3" /> },
-    { name: "Shared Gear", path: "/shared-gear", icon: <Users className="h-5 w-5 mr-3" /> },
-    { name: "Checked Out", path: "/checked-out", icon: <Clock className="h-5 w-5 mr-3" /> },
+  
+  const navigation = [
+    { name: "Dashboard", href: "/", icon: Home },
+    { name: "All Gear", href: "/all-gear", icon: Package },
+    { name: "My Gear", href: "/my-gear", icon: UserCircle },
+    { name: "Shared Gear", href: "/shared-gear", icon: Share2 },
+    { name: "Checked Out", href: "/checked-out", icon: Calendar },
+    { name: "Storage Locations", href: "/locations", icon: Map },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
-
+  
   return (
-    <div className="w-64 h-full bg-sidebar text-sidebar-foreground flex flex-col shadow-lg">
-      {/* Header/Logo */}
-      <div className="px-6 py-6">
-        <div className="flex items-center mb-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-7 w-7 mr-2"
+    <>
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+      
+      {/* Mobile sidebar */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 transform overflow-y-auto border-r bg-background p-4 shadow-lg transition-transform duration-200 md:static md:z-0 md:shadow-none",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        {/* Mobile close button */}
+        <div className="flex items-center justify-between md:hidden">
+          <Link href="/">
+            <a className="flex items-center gap-2 font-semibold">
+              <span>GearShare</span>
+            </a>
+          </Link>
+          <Button
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsMobileOpen(false)}
           >
-            <path d="M17.5 17.5 14 20l-2.5-5.5L6 12l10-2.5L17.5 7l.5-3.5 3.5.5-2 10-2 3.5z" />
-          </svg>
-          <h1 className="font-bold text-xl">GearShare</h1>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
         
-        {/* User info */}
-        <div className="mb-6 p-4 rounded-lg bg-sidebar-accent">
-          <div className="flex items-center">
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground h-10 w-10 rounded-full flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <div className="ml-3">
-              <p className="font-medium">{user?.username}</p>
-              <p className="text-sm opacity-75">Administrator</p>
-            </div>
-          </div>
+        {/* Logo and title - desktop */}
+        <div className="hidden h-16 items-center border-b md:flex">
+          <Link href="/">
+            <a className="flex items-center gap-2 font-semibold">
+              <span>GearShare</span>
+            </a>
+          </Link>
         </div>
-      </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 px-4">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link href={item.path}>
-                <a className={`
-                  flex items-center px-4 py-3 rounded-md w-full
-                  ${location === item.path 
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium" 
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"}
-                `}>
-                  {item.icon}
+        
+        {/* Navigation */}
+        <nav className="mt-8 flex flex-col gap-2">
+          {navigation.map((item) => {
+            const isActive = location === item.href;
+            return (
+              <Link key={item.name} href={item.href}>
+                <a
+                  className={cn(
+                    "group flex items-center gap-x-3 rounded-md px-3 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className={cn("h-5 w-5 shrink-0")} />
                   {item.name}
                 </a>
               </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      
-      {/* Footer Links */}
-      <div className="p-4 border-t border-sidebar-border mt-auto">
-        <ul className="space-y-1">
-          <li>
-            <Link href="/settings">
-              <a className="flex items-center px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-md">
-                <Settings className="h-5 w-5 mr-3" />
-                Settings
-              </a>
-            </Link>
-          </li>
-          <li>
-            <Link href="/help">
-              <a className="flex items-center px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-md">
-                <HelpCircle className="h-5 w-5 mr-3" />
-                Help & Support
-              </a>
-            </Link>
-          </li>
-          <li>
-            <Button 
-              variant="ghost" 
-              className="flex items-center w-full px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-md justify-start"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
-            </Button>
-          </li>
-        </ul>
+            );
+          })}
+        </nav>
+        
+        {/* Logout button */}
+        <div className="mt-8 border-t pt-4">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            Log out
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
