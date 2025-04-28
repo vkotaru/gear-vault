@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Map, Plus, Search } from "lucide-react";
+import { Map, Plus, Search, Edit, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 // Simplified location data structure until we add it to the schema
 interface Location {
@@ -16,9 +22,68 @@ interface Location {
   items: number; // Count of items stored at this location
 }
 
+// Form validation schema
+const locationFormSchema = z.object({
+  id: z.number().optional(),
+  name: z.string().min(1, "Name is required"),
+  address: z.string().min(1, "Address is required"),
+});
+
+type LocationFormValues = z.infer<typeof locationFormSchema>;
+
 export default function Locations() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const queryClient = useQueryClient();
+  
+  // Form setup
+  const form = useForm<LocationFormValues>({
+    resolver: zodResolver(locationFormSchema),
+    defaultValues: {
+      name: "",
+      address: ""
+    }
+  });
+
+  // Reset form when opening modal in add mode
+  const openAddLocationModal = () => {
+    form.reset({
+      name: "",
+      address: ""
+    });
+    setCurrentLocation(null);
+    setIsDialogOpen(true);
+  };
+
+  // Populate form when opening modal in edit mode
+  const openEditLocationModal = (location: Location) => {
+    form.reset({
+      id: location.id,
+      name: location.name,
+      address: location.address
+    });
+    setCurrentLocation(location);
+    setIsDialogOpen(true);
+  };
+
+  // Handle form submission
+  const onSubmit = (values: LocationFormValues) => {
+    // In a real app, this would call the API to save the location
+    const isEditing = !!values.id;
+    
+    toast({
+      title: `${isEditing ? 'Updated' : 'Added'} location`,
+      description: `Successfully ${isEditing ? 'updated' : 'added'} ${values.name}`,
+    });
+    
+    // Close the dialog
+    setIsDialogOpen(false);
+    
+    // Refresh the locations list
+    queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+  };
   
   // Mock data for now - will be replaced with actual API call
   const { data: locations, isLoading } = useQuery({
@@ -61,7 +126,7 @@ export default function Locations() {
             <h1 className="text-3xl font-bold tracking-tight">Storage Locations</h1>
             <p className="text-muted-foreground">Manage where your gear is stored</p>
           </div>
-          <Button>
+          <Button onClick={openAddLocationModal}>
             <Plus className="mr-2 h-4 w-4" /> Add Location
           </Button>
         </div>
@@ -94,7 +159,7 @@ export default function Locations() {
         ) : filteredLocations && filteredLocations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLocations.map((location) => (
-              <Card key={location.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card key={location.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center">
                     <Map className="h-5 w-5 mr-2 text-primary" />
@@ -105,9 +170,32 @@ export default function Locations() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis">
+                  <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis mb-4">
                     {location.address}
                   </p>
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => openEditLocationModal(location)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" /> Edit
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => {
+                        toast({
+                          title: "Location deleted",
+                          description: `${location.name} has been removed.`,
+                        });
+                        // In a real app, this would call the API to delete the location
+                        queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

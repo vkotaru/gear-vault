@@ -19,7 +19,7 @@ export default function Layout({ children, showFooter = true }: LayoutProps) {
         <Header />
         
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-4">
           {children}
         </main>
         
