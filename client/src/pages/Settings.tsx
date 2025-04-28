@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { 
   User, Shield, Bell, Database,
   Save
@@ -15,9 +16,14 @@ import {
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const tabFromUrl = searchParams.get("tab");
+  
+  const handleTabChange = (value: string) => {
+    // Update the URL with the tab without reloading the page
+    setLocation(`/settings?tab=${value}`, { replace: true });
+  };
   
   const [profileForm, setProfileForm] = useState({
     username: user?.username || "",
@@ -58,7 +64,10 @@ export default function Settings() {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-4">
+        <Tabs 
+          defaultValue={tabFromUrl || "profile"} 
+          className="space-y-4"
+          onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="profile" className="flex items-center gap-1">
               <User className="h-4 w-4" />

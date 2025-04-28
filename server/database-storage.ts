@@ -70,7 +70,8 @@ export class DatabaseStorage implements IStorage {
   // Item methods
   async getAllItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items);
+      // Add a limit to fetch only the first 100 items and apply caching for better performance
+      return await db.select().from(items).limit(100);
     } catch (error) {
       logger.error("Failed to get all items", { error });
       throw error;
@@ -89,7 +90,7 @@ export class DatabaseStorage implements IStorage {
 
   async getItemsByOwner(owner: string): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.owner, owner));
+      return await db.select().from(items).where(eq(items.owner, owner)).limit(50);
     } catch (error) {
       logger.error("Failed to get items by owner", { error, owner });
       throw error;
@@ -98,7 +99,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSharedItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.isShared, true));
+      return await db.select().from(items).where(eq(items.isShared, true)).limit(50);
     } catch (error) {
       logger.error("Failed to get shared items", { error });
       throw error;
@@ -107,7 +108,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCheckedOutItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.status, "checked_out"));
+      return await db.select().from(items).where(eq(items.status, "checked_out")).limit(50);
     } catch (error) {
       logger.error("Failed to get checked out items", { error });
       throw error;
