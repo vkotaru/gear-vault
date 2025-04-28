@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Plus, Search, Filter, Tag } from "lucide-react";
+import AddItemForm from "@/components/inventory/AddItemForm";
 
 export default function AllGear() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,9 +50,7 @@ export default function AllGear() {
             <h1 className="text-3xl font-bold tracking-tight">All Gear</h1>
             <p className="text-muted-foreground">Manage your outdoor equipment inventory</p>
           </div>
-          <Button className="mt-4 md:mt-0" size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Add New Item
-          </Button>
+          <AddItemForm />
         </div>
         
         {/* Search and Filters */}
@@ -161,9 +160,9 @@ export default function AllGear() {
                     ? "Try adjusting your search or filters"
                     : "Add some gear to get started"}
                 </p>
-                <Button className="mt-4" size="sm">
-                  <Plus className="mr-2 h-4 w-4" /> Add New Item
-                </Button>
+                <div className="mt-4">
+                  <AddItemForm />
+                </div>
               </div>
             )}
           </>
