@@ -210,12 +210,67 @@ export default function Locations() {
               {searchTerm ? "No locations match your search" : "You haven't added any storage locations yet"}
             </p>
             {!searchTerm && (
-              <Button className="mt-4" size="sm">
+              <Button className="mt-4" size="sm" onClick={openAddLocationModal}>
                 <Plus className="mr-2 h-4 w-4" /> Add Your First Location
               </Button>
             )}
           </div>
         )}
+        
+        {/* Location Form Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{currentLocation ? 'Edit Location' : 'Add New Location'}</DialogTitle>
+              <DialogDescription>
+                {currentLocation 
+                  ? 'Update the details for this storage location.' 
+                  : 'Add a new place where your gear is stored.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Garage, Basement, Storage Unit..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123 Main St, Anytown, ST 12345" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Where is this location? Include as much detail as needed.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button type="submit">
+                    {currentLocation ? 'Save Changes' : 'Add Location'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
