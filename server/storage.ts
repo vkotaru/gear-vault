@@ -48,9 +48,10 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     this.currentItemId = 1;
     this.currentCheckoutId = 1;
-
-    // Create default admin user
-    this.createUser({
+    
+    // Add default admin user
+    this.users.set(1, {
+      id: 1,
       username: "admin",
       password: "password"
     });
