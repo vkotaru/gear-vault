@@ -11,6 +11,8 @@ import MyGear from "@/pages/MyGear";
 import SharedGear from "@/pages/SharedGear";
 import CheckedOutGear from "@/pages/CheckedOutGear";
 import ItemDetails from "@/pages/ItemDetails";
+import Locations from "@/pages/Locations";
+import Settings from "@/pages/Settings";
 
 function Router() {
   return (
@@ -20,6 +22,8 @@ function Router() {
       <ProtectedRoute path="/my-gear" component={MyGear} />
       <ProtectedRoute path="/shared-gear" component={SharedGear} />
       <ProtectedRoute path="/checked-out" component={CheckedOutGear} />
+      <ProtectedRoute path="/locations" component={Locations} />
+      <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/items/:id">
         {(params) => <ItemDetails id={params.id} />}

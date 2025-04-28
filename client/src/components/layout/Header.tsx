@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Menu, Bell, Settings, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +24,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
       <div className="hidden md:block">
-        <div 
+        <Link 
+          href="/"
           className="flex items-center gap-2 font-semibold cursor-pointer"
-          onClick={() => window.location.href = '/'}
         >
           <span className="hidden sm:inline-block">GearShare</span>
-        </div>
+        </Link>
       </div>
       
       {/* Mobile menu button - shown on small screens */}
@@ -70,11 +70,15 @@ export default function Header() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" /> Profile
+          <DropdownMenuItem asChild>
+            <Link href="/settings?tab=profile">
+              <User className="mr-2 h-4 w-4" /> Profile
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" /> Settings
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings className="mr-2 h-4 w-4" /> Settings
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
