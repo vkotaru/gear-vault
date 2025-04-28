@@ -10,6 +10,10 @@ import {
   type InsertCheckoutHistory,
   type UpdateCheckoutHistory
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   // User methods
@@ -31,6 +35,9 @@ export interface IStorage {
   getCheckoutHistory(itemId: number): Promise<CheckoutHistory[]>;
   checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory>;
   returnItem(itemId: number, returnData: UpdateCheckoutHistory): Promise<CheckoutHistory | undefined>;
+
+  // Session store
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
