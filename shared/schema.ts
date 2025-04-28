@@ -25,6 +25,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+// Location schema
+export const locations = pgTable("locations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Item schema
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
@@ -34,6 +42,7 @@ export const items = pgTable("items", {
   category: categoryEnum("category").notNull(),
   owner: text("owner").notNull(),
   isShared: boolean("is_shared").notNull().default(true),
+  locationId: integer("location_id").references(() => locations.id),  // Optional for backwards compatibility
   storageLocation: text("storage_location").notNull(),
   storageAddress: text("storage_address"),
   condition: text("condition").default("Good"),
@@ -72,9 +81,18 @@ export const updateCheckoutHistorySchema = createInsertSchema(checkoutHistory).p
   returnedOn: true,
 });
 
+// Location schemas
+export const insertLocationSchema = createInsertSchema(locations).omit({
+  id: true,
+  createdAt: true,
+});
+
 // TypeScript types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type Location = typeof locations.$inferSelect;
 
 export type InsertItem = z.infer<typeof insertItemSchema>;
 export type Item = typeof items.$inferSelect;

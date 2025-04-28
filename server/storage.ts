@@ -1,14 +1,17 @@
 import { 
   users, 
   items, 
-  checkoutHistory, 
+  checkoutHistory,
+  locations,
   type User, 
   type InsertUser, 
   type Item, 
   type InsertItem,
   type CheckoutHistory,
   type InsertCheckoutHistory,
-  type UpdateCheckoutHistory
+  type UpdateCheckoutHistory,
+  type Location,
+  type InsertLocation
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
