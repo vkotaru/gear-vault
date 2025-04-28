@@ -15,7 +15,7 @@ export const mockItems: Item[] = [
     isShared: true,
     status: 'available',
     imageUrls: ['/api/uploads/tent.jpg'],
-    createdAt: new Date().toISOString()
+    addedOn: new Date()
   },
   {
     id: 2,
@@ -30,7 +30,7 @@ export const mockItems: Item[] = [
     isShared: false,
     status: 'available',
     imageUrls: ['/api/uploads/boots.jpg'],
-    createdAt: new Date().toISOString()
+    addedOn: new Date()
   },
   {
     id: 3,
@@ -45,7 +45,7 @@ export const mockItems: Item[] = [
     isShared: true,
     status: 'checked_out',
     imageUrls: ['/api/uploads/bike.jpg'],
-    createdAt: new Date().toISOString()
+    addedOn: new Date()
   },
   {
     id: 4,
@@ -60,7 +60,7 @@ export const mockItems: Item[] = [
     isShared: true,
     status: 'available',
     imageUrls: ['/api/uploads/kayak.jpg'],
-    createdAt: new Date().toISOString()
+    addedOn: new Date()
   },
   {
     id: 5,
@@ -75,7 +75,7 @@ export const mockItems: Item[] = [
     isShared: false,
     status: 'available',
     imageUrls: ['/api/uploads/snowboard.jpg'],
-    createdAt: new Date().toISOString()
+    addedOn: new Date()
   }
 ];
 
