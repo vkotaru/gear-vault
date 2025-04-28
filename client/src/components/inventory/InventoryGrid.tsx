@@ -22,8 +22,10 @@ export default function InventoryGrid({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: items = [], isLoading, isError } = useQuery<Item[]>({
+  const { data: items = [], isLoading, isError, error } = useQuery<Item[]>({
     queryKey: [queryKey],
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 
   // Filter items based on active category and search query
@@ -66,9 +68,19 @@ export default function InventoryGrid({
 
   if (isError) {
     return (
-      <div className="w-full p-8 text-center">
-        <h3 className="text-lg font-semibold text-red-500">Error loading inventory</h3>
-        <p className="text-neutral-600">Please try again later</p>
+      <div className="w-full p-8 text-center border rounded-lg bg-red-50">
+        <Package className="mx-auto h-12 w-12 text-red-400 mb-4" />
+        <h3 className="text-lg font-semibold text-red-600">Error loading inventory</h3>
+        <p className="text-neutral-600 mb-4">
+          {error instanceof Error ? error.message : "Please try again later"}
+        </p>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
       </div>
     );
   }
