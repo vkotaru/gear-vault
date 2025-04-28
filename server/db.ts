@@ -13,12 +13,9 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-try {
-  logger.info("Connecting to PostgreSQL database");
-  export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  export const db = drizzle(pool, { schema });
-  logger.info("Successfully connected to PostgreSQL database");
-} catch (error) {
-  logger.error("Failed to connect to PostgreSQL database", { error });
-  throw error;
-}
+logger.info("Connecting to PostgreSQL database");
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool, { schema });
+logger.info("Successfully connected to PostgreSQL database");
+
+export { pool, db };

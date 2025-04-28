@@ -161,7 +161,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(checkoutHistory)
         .where(eq(checkoutHistory.itemId, itemId))
-        .orderBy(desc(checkoutHistory.checkedOutAt));
+        .orderBy(desc(checkoutHistory.checkedOutOn));
     } catch (error) {
       logger.error("Failed to get checkout history", { error, itemId });
       throw error;
@@ -198,10 +198,10 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(checkoutHistory.itemId, itemId),
-            isNull(checkoutHistory.returnedAt)
+            isNull(checkoutHistory.returnedOn)
           )
         )
-        .orderBy(desc(checkoutHistory.checkedOutAt))
+        .orderBy(desc(checkoutHistory.checkedOutOn))
         .limit(1);
       
       if (!latestCheckout) {

@@ -12,6 +12,8 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { DatabaseStorage } from "./database-storage";
+import logger from "./logger";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -210,4 +212,8 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use the memory storage for now for compatibility
+// export const storage = new MemStorage();
+
+// Use the database storage
+export const storage = new DatabaseStorage();
