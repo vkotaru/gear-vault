@@ -17,9 +17,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Location } from "@shared/schema";
 
 // Extended location interface with item count
-interface LocationWithItemCount extends Location {
+interface LocationWithItemCount {
+  id: number;
+  name: string;
+  address: string;
+  description: string | null;
+  createdAt: Date;
   items: number; // Count of items stored at this location
-  description?: string | null;
 }
 
 // Form validation schema
@@ -44,7 +48,8 @@ export default function Locations() {
     resolver: zodResolver(locationFormSchema),
     defaultValues: {
       name: "",
-      address: ""
+      address: "",
+      description: ""
     }
   });
 
@@ -52,7 +57,8 @@ export default function Locations() {
   const openAddLocationModal = () => {
     form.reset({
       name: "",
-      address: ""
+      address: "",
+      description: ""
     });
     setCurrentLocation(null);
     setIsDialogOpen(true);
@@ -226,10 +232,15 @@ export default function Locations() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis mb-4">
-                    {location.address}
+                  <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis mb-1">
+                    <span className="font-medium">Address:</span> {location.address}
                   </p>
-                  <div className="flex justify-end space-x-2">
+                  {location.description && (
+                    <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis mb-4">
+                      <span className="font-medium">Note:</span> {location.description}
+                    </p>
+                  )}
+                  <div className="flex justify-end space-x-2 mt-4">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -241,15 +252,19 @@ export default function Locations() {
                       variant="destructive" 
                       size="sm"
                       onClick={() => {
-                        toast({
-                          title: "Location deleted",
-                          description: `${location.name} has been removed.`,
-                        });
-                        // In a real app, this would call the API to delete the location
-                        queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+                        // Show a confirmation dialog
+                        if (window.confirm(`Are you sure you want to delete ${location.name}?`)) {
+                          deleteLocationMutation.mutate(location.id);
+                        }
                       }}
+                      disabled={deleteLocationMutation.isPending}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      {deleteLocationMutation.isPending ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-1" />
+                      )}
+                      {deleteLocationMutation.isPending ? 'Deleting...' : ''}
                     </Button>
                   </div>
                 </CardContent>
@@ -318,9 +333,33 @@ export default function Locations() {
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Additional notes about this location..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <DialogFooter>
-                  <Button type="submit">
-                    {currentLocation ? 'Save Changes' : 'Add Location'}
+                  <Button 
+                    type="submit" 
+                    disabled={createLocationMutation.isPending || updateLocationMutation.isPending}
+                  >
+                    {(createLocationMutation.isPending || updateLocationMutation.isPending) ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                        {currentLocation ? 'Saving...' : 'Adding...'}
+                      </>
+                    ) : (
+                      currentLocation ? 'Save Changes' : 'Add Location'
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
