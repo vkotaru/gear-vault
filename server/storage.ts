@@ -44,6 +44,7 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private items: Map<number, Item>;
   private checkoutHistory: Map<number, CheckoutHistory>;
+  sessionStore: session.Store;
   currentUserId: number;
   currentItemId: number;
   currentCheckoutId: number;
@@ -52,6 +53,9 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.items = new Map();
     this.checkoutHistory = new Map();
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // Prune expired entries every 24h
+    });
     this.currentUserId = 1;
     this.currentItemId = 1;
     this.currentCheckoutId = 1;

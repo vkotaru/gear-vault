@@ -10,10 +10,7 @@ import {
   insertCheckoutHistorySchema,
   updateCheckoutHistorySchema
 } from "@shared/schema";
-import session from "express-session";
-import MemoryStore from "memorystore";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
+import { setupAuth } from "./auth";
 
 // Configure uploads
 const upload = multer({ 
@@ -26,57 +23,10 @@ if (!fs.existsSync(path.join(process.cwd(), "uploads"))) {
   fs.mkdirSync(path.join(process.cwd(), "uploads"));
 }
 
-// Configure session store
-const MemoryStoreSession = MemoryStore(session);
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "gearshare-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    },
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    })
-  }));
-
-  // Setup passport
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  // Passport local strategy
-  passport.use(new LocalStrategy(async (username, password, done) => {
-    try {
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return done(null, false, { message: "Incorrect username" });
-      }
-      if (user.password !== password) { // In production, use proper password hashing
-        return done(null, false, { message: "Incorrect password" });
-      }
-      return done(null, user);
-    } catch (err) {
-      return done(err);
-    }
-  }));
-
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-
+  // Setup authentication
+  setupAuth(app);
+  
   // Serve static files from uploads directory
   app.use("/api/uploads", (req, res, next) => {
     // Check if user is authenticated
@@ -93,18 +43,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(401).json({ message: "Unauthorized" });
   };
-
-  // Auth routes
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.json({ message: "Logged in successfully", user: req.user });
-  });
-
-  app.post("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
+  
+  // Additional auth routes
   app.get("/api/auth/status", (req, res) => {
     if (req.isAuthenticated()) {
       res.json({ isAuthenticated: true, user: req.user });
