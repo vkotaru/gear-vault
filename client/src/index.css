@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 150 45% 30%; /* Dark green for outdoor theme */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 25 70% 45%; /* Orange for call-to-action */
+  --secondary-foreground: 0 0% 98%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --chart-1: 150 45% 30%;
+  --chart-2: 25 70% 45%;
+  --chart-3: 210 90% 50%;
+  --chart-4: 35 84% 50%;
+  --chart-5: 270 60% 50%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 150 45% 30%;
+  --radius: 0.5rem;
+
+  /* Sidebar colors in light mode */
+  --sidebar-background: 150 45% 30%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 150 45% 30%;
+  --sidebar-accent: 148 45% 22%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 148 45% 22%;
+  --sidebar-ring: 0 0% 98%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 150 45% 40%; /* Lighter green for dark mode */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 25 70% 55%; /* Brighter orange for dark mode */
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --chart-1: 150 45% 40%;
+  --chart-2: 25 70% 55%;
+  --chart-3: 210 90% 60%;
+  --chart-4: 35 84% 60%;
+  --chart-5: 270 60% 60%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+
+  /* Sidebar colors in dark mode */
+  --sidebar-background: 148 45% 22%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 148 45% 22%;
+  --sidebar-accent: 150 45% 30%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 150 45% 30%;
+  --sidebar-ring: 0 0% 98%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Specific styling for the gear app */
+.hero-image {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+    url('https://images.unsplash.com/photo-1533240332313-0db49b459ad6?ixlib=rb-4.0.3&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  @apply h-full w-full;
+}
+
+.image-upload-area {
+  @apply border-2 border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:border-primary transition-colors;
+}
+
+.category-badge {
+  @apply flex items-center px-3 py-1 bg-white border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-100 cursor-pointer transition-colors;
+}
+
+.category-badge.active {
+  @apply bg-primary/10 border-primary text-primary;
+}

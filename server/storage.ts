@@ -1,0 +1,176 @@
+import { 
+  users, 
+  items, 
+  checkoutHistory, 
+  type User, 
+  type InsertUser, 
+  type Item, 
+  type InsertItem,
+  type CheckoutHistory,
+  type InsertCheckoutHistory,
+  type UpdateCheckoutHistory
+} from "@shared/schema";
+
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Item methods
+  getAllItems(): Promise<Item[]>;
+  getItem(id: number): Promise<Item | undefined>;
+  getItemsByOwner(owner: string): Promise<Item[]>;
+  getSharedItems(): Promise<Item[]>;
+  getCheckedOutItems(): Promise<Item[]>;
+  createItem(item: InsertItem): Promise<Item>;
+  updateItem(id: number, item: Partial<InsertItem>): Promise<Item | undefined>;
+  deleteItem(id: number): Promise<boolean>;
+
+  // Checkout methods
+  getCheckoutHistory(itemId: number): Promise<CheckoutHistory[]>;
+  checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory>;
+  returnItem(itemId: number, returnData: UpdateCheckoutHistory): Promise<CheckoutHistory | undefined>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private items: Map<number, Item>;
+  private checkoutHistory: Map<number, CheckoutHistory>;
+  currentUserId: number;
+  currentItemId: number;
+  currentCheckoutId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.items = new Map();
+    this.checkoutHistory = new Map();
+    this.currentUserId = 1;
+    this.currentItemId = 1;
+    this.currentCheckoutId = 1;
+
+    // Create default admin user
+    this.createUser({
+      username: "admin",
+      password: "password"
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // Item methods
+  async getAllItems(): Promise<Item[]> {
+    return Array.from(this.items.values());
+  }
+
+  async getItem(id: number): Promise<Item | undefined> {
+    return this.items.get(id);
+  }
+
+  async getItemsByOwner(owner: string): Promise<Item[]> {
+    return Array.from(this.items.values()).filter(
+      (item) => item.owner === owner
+    );
+  }
+
+  async getSharedItems(): Promise<Item[]> {
+    return Array.from(this.items.values()).filter(
+      (item) => item.isShared
+    );
+  }
+
+  async getCheckedOutItems(): Promise<Item[]> {
+    return Array.from(this.items.values()).filter(
+      (item) => item.status === "checked_out"
+    );
+  }
+
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    const id = this.currentItemId++;
+    const addedOn = new Date();
+    const item: Item = { ...insertItem, id, addedOn };
+    this.items.set(id, item);
+    return item;
+  }
+
+  async updateItem(id: number, updateData: Partial<InsertItem>): Promise<Item | undefined> {
+    const existingItem = this.items.get(id);
+    if (!existingItem) {
+      return undefined;
+    }
+
+    const updatedItem: Item = { ...existingItem, ...updateData };
+    this.items.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  async deleteItem(id: number): Promise<boolean> {
+    return this.items.delete(id);
+  }
+
+  // Checkout methods
+  async getCheckoutHistory(itemId: number): Promise<CheckoutHistory[]> {
+    return Array.from(this.checkoutHistory.values()).filter(
+      (history) => history.itemId === itemId
+    ).sort((a, b) => 
+      new Date(b.checkedOutOn).getTime() - new Date(a.checkedOutOn).getTime()
+    );
+  }
+
+  async checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory> {
+    const id = this.currentCheckoutId++;
+    const checkoutRecord: CheckoutHistory = { ...checkout, id };
+    
+    // Update item status
+    const item = this.items.get(checkout.itemId);
+    if (item) {
+      this.items.set(checkout.itemId, { ...item, status: "checked_out" });
+    }
+
+    this.checkoutHistory.set(id, checkoutRecord);
+    return checkoutRecord;
+  }
+
+  async returnItem(itemId: number, returnData: UpdateCheckoutHistory): Promise<CheckoutHistory | undefined> {
+    // Find the most recent checkout for this item that hasn't been returned
+    const checkouts = Array.from(this.checkoutHistory.values()).filter(
+      (history) => history.itemId === itemId && !history.returnedOn
+    ).sort((a, b) => 
+      new Date(b.checkedOutOn).getTime() - new Date(a.checkedOutOn).getTime()
+    );
+
+    if (checkouts.length === 0) {
+      return undefined;
+    }
+
+    const latestCheckout = checkouts[0];
+    const updatedCheckout: CheckoutHistory = { ...latestCheckout, ...returnData };
+    
+    // Update item status
+    const item = this.items.get(itemId);
+    if (item) {
+      this.items.set(itemId, { ...item, status: "available" });
+    }
+
+    this.checkoutHistory.set(latestCheckout.id, updatedCheckout);
+    return updatedCheckout;
+  }
+}
+
+export const storage = new MemStorage();
