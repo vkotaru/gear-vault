@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, MoreVertical, Tag, Trash, Edit, Share } from 'lucide-react';
+import AddItemForm from '@/components/inventory/AddItemForm';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export default function MyGear() {
@@ -67,9 +68,7 @@ export default function MyGear() {
             <h1 className="text-3xl font-bold tracking-tight">My Gear</h1>
             <p className="text-muted-foreground">Manage your personal gear inventory</p>
           </div>
-          <Button className="mt-4 md:mt-0" size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Add New Item
-          </Button>
+          <AddItemForm />
         </div>
         
         {isLoading ? (
@@ -173,9 +172,9 @@ export default function MyGear() {
                 <p className="text-muted-foreground">
                   You haven't added any items to your inventory yet
                 </p>
-                <Button className="mt-4" size="sm">
-                  <Plus className="mr-2 h-4 w-4" /> Add Your First Item
-                </Button>
+                <div className="mt-4">
+                  <AddItemForm />
+                </div>
               </div>
             )}
           </>
