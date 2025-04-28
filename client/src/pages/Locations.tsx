@@ -14,12 +14,12 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Simplified location data structure until we add it to the schema
-interface Location {
-  id: number;
-  name: string;
-  address: string;
+import { Location } from "@shared/schema";
+
+// Extended location interface with item count
+interface LocationWithItemCount extends Location {
   items: number; // Count of items stored at this location
+  description?: string | null;
 }
 
 // Form validation schema
@@ -27,6 +27,7 @@ const locationFormSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(1, "Name is required"),
   address: z.string().min(1, "Address is required"),
+  description: z.string().optional(),
 });
 
 type LocationFormValues = z.infer<typeof locationFormSchema>;
@@ -35,7 +36,7 @@ export default function Locations() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationWithItemCount | null>(null);
   const queryClient = useQueryClient();
   
   // Form setup
@@ -58,49 +59,104 @@ export default function Locations() {
   };
 
   // Populate form when opening modal in edit mode
-  const openEditLocationModal = (location: Location) => {
+  const openEditLocationModal = (location: LocationWithItemCount) => {
     form.reset({
       id: location.id,
       name: location.name,
-      address: location.address
+      address: location.address,
+      description: location.description || ''
     });
     setCurrentLocation(location);
     setIsDialogOpen(true);
   };
 
+  // Create location mutation
+  const createLocationMutation = useMutation({
+    mutationFn: async (data: LocationFormValues) => {
+      const res = await apiRequest("POST", "/api/locations", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Location added",
+        description: "The new location has been added successfully.",
+      });
+      setIsDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to add location: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update location mutation
+  const updateLocationMutation = useMutation({
+    mutationFn: async (data: LocationFormValues) => {
+      if (!data.id) throw new Error("Location ID is required for updates");
+      const res = await apiRequest("PUT", `/api/locations/${data.id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Location updated",
+        description: "The location has been updated successfully.",
+      });
+      setIsDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update location: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete location mutation
+  const deleteLocationMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/locations/${id}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Location deleted",
+        description: "The location has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete location: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Handle form submission
   const onSubmit = (values: LocationFormValues) => {
-    // In a real app, this would call the API to save the location
     const isEditing = !!values.id;
     
-    toast({
-      title: `${isEditing ? 'Updated' : 'Added'} location`,
-      description: `Successfully ${isEditing ? 'updated' : 'added'} ${values.name}`,
-    });
-    
-    // Close the dialog
-    setIsDialogOpen(false);
-    
-    // Refresh the locations list
-    queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+    if (isEditing) {
+      updateLocationMutation.mutate(values);
+    } else {
+      createLocationMutation.mutate(values);
+    }
   };
   
-  // Mock data for now - will be replaced with actual API call
-  const { data: locations, isLoading } = useQuery({
+  // Fetch locations from the API
+  const { data: locations, isLoading } = useQuery<LocationWithItemCount[]>({
     queryKey: ["/api/locations"],
     queryFn: async () => {
       try {
-        // This will start working when we add the API endpoint
-        // const res = await apiRequest("GET", "/api/locations");
-        // return await res.json();
-        
-        // For now, return sample data
-        return [
-          { id: 1, name: "Home Storage", address: "123 Main St, Anytown", items: 5 },
-          { id: 2, name: "Garage", address: "123 Main St, Anytown", items: 8 },
-          { id: 3, name: "Basement", address: "123 Main St, Anytown", items: 3 },
-          { id: 4, name: "Cabin", address: "456 Mountain Rd, Forest Hills", items: 12 },
-        ] as Location[];
+        const res = await apiRequest("GET", "/api/locations/with-counts");
+        return await res.json();
       } catch (error) {
         console.error("Error fetching locations:", error);
         toast({

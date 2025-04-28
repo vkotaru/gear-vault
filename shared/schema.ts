@@ -30,6 +30,7 @@ export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address").notNull(),
+  description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
