@@ -1,131 +1,223 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import Layout from "@/components/layout/Layout";
-import DashboardStats from "@/components/dashboard/DashboardStats";
-import InventoryGrid from "@/components/inventory/InventoryGrid";
-import AddItemForm from "@/components/inventory/AddItemForm";
-import { Item } from "@shared/schema";
-import { ArrowUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Loader2, Package, UsersRound, Share2, Calendar } from "lucide-react";
+
+interface StatsResponse {
+  total: number;
+  available: number;
+  checkedOut: number;
+}
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
-  // Fetch recently added items
-  const { data: items = [] } = useQuery<Item[]>({
-    queryKey: ['/api/items'],
+  const { data: stats, isLoading } = useQuery<StatsResponse>({
+    queryKey: ['/api/stats'],
   });
-  
-  // Sort items by addedOn date to get the most recent items
-  const recentItems = [...items]
-    .sort((a, b) => new Date(b.addedOn).getTime() - new Date(a.addedOn).getTime())
-    .slice(0, 6);
 
+  const chartData = [
+    { name: 'Available', value: stats?.available || 0 },
+    { name: 'Checked Out', value: stats?.checkedOut || 0 },
+  ];
+  
+  const COLORS = ['#10b981', '#f97316'];
+
+  const categoryData = [
+    { name: 'Camping', value: 5 },
+    { name: 'Hiking', value: 3 },
+    { name: 'Biking', value: 2 },
+    { name: 'Water', value: 1 },
+    { name: 'Winter', value: 1 },
+  ];
+  
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-neutral-800">Equipment Dashboard</h2>
-            
-            <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-              <AddItemForm />
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.username}</h1>
+        <p className="text-muted-foreground">Here's an overview of your gear inventory</p>
+        
+        {isLoading ? (
+          <div className="flex justify-center my-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <>
+            {/* Stats overview */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.total || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Items in your inventory
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Available</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.available || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Items ready to use
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Checked Out</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.checkedOut || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Items currently in use
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Shared Items</CardTitle>
+                  <Share2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">2</div>
+                  <p className="text-xs text-muted-foreground">
+                    Items shared with others
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-          
-          {/* Dashboard Stats */}
-          <DashboardStats />
-        </div>
-        
-        {/* Recently Added Items */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-neutral-800">Recently Added</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-primary"
-              onClick={() => setLocation('/all-gear')}
-            >
-              View All <ArrowUpRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentItems.map((item) => (
-              <InventoryGrid
-                key={item.id}
-                queryKey={`/api/items/${item.id}`}
-                title="Recent Items"
-                emptyMessage="No recent items found"
-              />
-            ))}
-          </div>
-        </div>
-        
-        {/* Quick Access */}
-        <div className="mb-8">
-          <h3 className="text-xl font-bold text-neutral-800 mb-4">Quick Access</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button
-              className="h-auto py-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-              onClick={() => setLocation('/all-gear')}
-            >
-              <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mb-2">
-                  <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                  <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                  <path d="M7 21h10"/>
-                  <path d="M12 3v18"/>
-                  <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-                </svg>
-                <span className="text-lg font-medium">All Gear</span>
-              </div>
-            </Button>
             
-            <Button
-              className="h-auto py-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-              onClick={() => setLocation('/my-gear')}
-            >
-              <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mb-2">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <span className="text-lg font-medium">My Gear</span>
-              </div>
-            </Button>
+            {/* Charts */}
+            <div className="grid gap-4 md:grid-cols-2 mt-6">
+              <Card className="col-span-1">
+                <CardHeader>
+                  <CardTitle>Inventory Status</CardTitle>
+                  <CardDescription>
+                    Available vs. checked out items
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="col-span-1">
+                <CardHeader>
+                  <CardTitle>Items by Category</CardTitle>
+                  <CardDescription>
+                    Distribution across categories
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={categoryData}
+                        margin={{
+                          top: 5,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             
-            <Button
-              className="h-auto py-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-              onClick={() => setLocation('/shared-gear')}
-            >
-              <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mb-2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <span className="text-lg font-medium">Shared Gear</span>
-              </div>
-            </Button>
-            
-            <Button
-              className="h-auto py-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-              onClick={() => setLocation('/checked-out')}
-            >
-              <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mb-2">
-                  <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/>
-                  <path d="m9 17 6 6"/>
-                  <path d="m15 17-6 6"/>
-                </svg>
-                <span className="text-lg font-medium">Checked Out</span>
-              </div>
-            </Button>
-          </div>
-        </div>
+            {/* Recent activity */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Latest updates to your inventory
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Tent was added to inventory</p>
+                      <p className="text-xs text-muted-foreground">Today at 2:30 PM</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Sleeping bag was checked out</p>
+                      <p className="text-xs text-muted-foreground">Yesterday at 10:15 AM</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Share2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Hiking boots were shared</p>
+                      <p className="text-xs text-muted-foreground">Feb 25, 2023</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </Layout>
   );

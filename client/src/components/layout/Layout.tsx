@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import Header from "./Header";
+import Sidebar from "./Sidebar";
 import Footer from "./Footer";
-import { useAuth } from "@/lib/authContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,15 +9,23 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, showFooter = true }: LayoutProps) {
-  const { isAuthenticated } = useAuth();
-
   return (
-    <div className="min-h-screen flex flex-col">
-      {isAuthenticated && <Header />}
-      <main className="flex-1 bg-neutral-100">
-        {children}
-      </main>
-      {isAuthenticated && showFooter && <Footer />}
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 overflow-x-hidden">
+        <Header />
+        
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+        
+        {/* Footer */}
+        {showFooter && <Footer />}
+      </div>
     </div>
   );
 }
