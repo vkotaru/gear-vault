@@ -1,13 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../../test-utils';
 import ItemDetail from './ItemDetail';
-import { mockAuthContext } from '../../__mocks__/auth';
 import { mockItems } from '../../__mocks__/data';
 import * as tanstackQuery from '@tanstack/react-query';
 
-// Mock the useAuth hook
+// Mock useAuth directly in this file
 vi.mock('@/hooks/use-auth', () => ({
-  useAuth: vi.fn(() => mockAuthContext)
+  useAuth: () => ({
+    user: {
+      id: 1,
+      username: 'testuser',
+      password: 'hashed_password'
+    },
+    isLoading: false,
+    error: null,
+    loginMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    },
+    logoutMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    },
+    registerMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    }
+  })
 }));
 
 // Mock the useQuery hook from react-query
@@ -31,12 +56,26 @@ describe('ItemDetail', () => {
     vi.clearAllMocks();
     
     // Mock the useQuery to return mock item
-    vi.mocked(tanstackQuery.useQuery).mockReturnValue({
-      data: mockItems[0],
-      isLoading: false,
-      error: null,
-      isError: false,
-    } as any);
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+      const queryKey = options.queryKey;
+      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
+        // Mock checkout history data
+        return {
+          data: [],  // Return empty array for checkout history
+          isLoading: false,
+          error: null,
+          isError: false
+        };
+      } else {
+        // Mock regular item data
+        return {
+          data: mockItems[0],
+          isLoading: false,
+          error: null,
+          isError: false
+        };
+      }
+    });
   });
 
   it('renders correctly with item data', async () => {
@@ -61,12 +100,24 @@ describe('ItemDetail', () => {
 
   it('shows loading state', async () => {
     // Override the mock to show loading state
-    vi.mocked(tanstackQuery.useQuery).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      isError: false,
-    } as any);
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+      const queryKey = options.queryKey;
+      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
+        return {
+          data: [],
+          isLoading: false,
+          error: null,
+          isError: false
+        };
+      } else {
+        return {
+          data: undefined,
+          isLoading: true,
+          error: null,
+          isError: false
+        };
+      }
+    });
     
     render(<ItemDetail itemId={1} />);
     
@@ -76,18 +127,30 @@ describe('ItemDetail', () => {
 
   it('handles error state', async () => {
     // Override the mock to show error state
-    vi.mocked(tanstackQuery.useQuery).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('Failed to load item'),
-      isError: true,
-    } as any);
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+      const queryKey = options.queryKey;
+      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
+        return {
+          data: [],
+          isLoading: false,
+          error: null,
+          isError: false
+        };
+      } else {
+        return {
+          data: undefined,
+          isLoading: false,
+          error: new Error('Failed to load item'),
+          isError: true
+        };
+      }
+    });
     
     render(<ItemDetail itemId={1} />);
     
     // Should display error message
     expect(screen.getByText(/error/i)).toBeInTheDocument();
-    expect(screen.getByText(/failed to load item/i)).toBeInTheDocument();
+    expect(screen.getByText(/Unable to load the item details/i)).toBeInTheDocument();
   });
 
   it('shows availability status correctly', async () => {
