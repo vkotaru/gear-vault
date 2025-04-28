@@ -116,7 +116,25 @@ export class MemStorage implements IStorage {
   async createItem(insertItem: InsertItem): Promise<Item> {
     const id = this.currentItemId++;
     const addedOn = new Date();
-    const item: Item = { ...insertItem, id, addedOn };
+    
+    // Create a complete item object with all required fields and proper defaults
+    const item: Item = {
+      id, 
+      addedOn,
+      name: insertItem.name,
+      category: insertItem.category,
+      owner: insertItem.owner,
+      isShared: insertItem.isShared ?? false,
+      storageLocation: insertItem.storageLocation,
+      address: insertItem.address ?? null,
+      purchasePrice: insertItem.purchasePrice ?? null,
+      purchaseDate: insertItem.purchaseDate ?? null,
+      brand: insertItem.brand ?? null,
+      description: insertItem.description ?? null,
+      status: insertItem.status ?? "available",
+      imageUrls: insertItem.imageUrls ?? []
+    };
+    
     this.items.set(id, item);
     return item;
   }
@@ -147,7 +165,15 @@ export class MemStorage implements IStorage {
 
   async checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory> {
     const id = this.currentCheckoutId++;
-    const checkoutRecord: CheckoutHistory = { ...checkout, id };
+    
+    // Create a valid CheckoutHistory record with all required fields
+    const checkoutRecord: CheckoutHistory = { 
+      ...checkout, 
+      id,
+      checkedOutOn: checkout.checkedOutOn || new Date(),
+      dueBack: checkout.dueBack || null,
+      returnedOn: null // Not returned yet
+    };
     
     // Update item status
     const item = this.items.get(checkout.itemId);

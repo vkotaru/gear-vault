@@ -11,6 +11,7 @@ import {
   updateCheckoutHistorySchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import logger from "./logger";
 
 // Configure uploads
 const upload = multer({ 
@@ -55,22 +56,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Item routes
   app.get("/api/items", isAuthenticated, async (req, res) => {
+    logger.info("GET /api/items - Fetching all items");
     try {
       const items = await storage.getAllItems();
+      logger.debug(`GET /api/items - Found ${items.length} items`);
       res.json(items);
     } catch (error) {
+      logger.error("GET /api/items - Error fetching items", { error });
       res.status(500).json({ message: "Failed to fetch items" });
     }
   });
 
   app.get("/api/items/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    logger.info(`GET /api/items/${id} - Fetching item by ID`);
     try {
-      const item = await storage.getItem(parseInt(req.params.id));
+      const item = await storage.getItem(id);
       if (!item) {
+        logger.warn(`GET /api/items/${id} - Item not found`);
         return res.status(404).json({ message: "Item not found" });
       }
+      logger.debug(`GET /api/items/${id} - Item found`, { itemId: id });
       res.json(item);
     } catch (error) {
+      logger.error(`GET /api/items/${id} - Error fetching item`, { error, itemId: id });
       res.status(500).json({ message: "Failed to fetch item" });
     }
   });
@@ -103,21 +112,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/items", isAuthenticated, upload.array("images", 5), async (req, res) => {
+    logger.info("POST /api/items - Creating new item");
     try {
       // Get uploaded file paths
       const files = req.files as Express.Multer.File[];
       const imageUrls = files.map(file => `/api/uploads/${file.filename}`);
+      logger.debug(`POST /api/items - Processed ${files.length} uploaded images`);
       
       // Parse and validate item data
       const itemData = JSON.parse(req.body.item);
+      logger.debug("POST /api/items - Received item data", { itemData });
+      
       const validatedItem = insertItemSchema.parse({
         ...itemData,
         imageUrls
       });
       
       const item = await storage.createItem(validatedItem);
+      logger.info(`POST /api/items - Item created successfully with ID ${item.id}`);
       res.status(201).json(item);
     } catch (error) {
+      logger.error("POST /api/items - Error creating item", { error });
       res.status(400).json({ message: "Invalid item data", error });
     }
   });
