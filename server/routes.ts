@@ -94,19 +94,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/items/shared", isAuthenticated, async (req, res) => {
+    logger.info("GET /api/items/shared - Fetching shared items");
     try {
       const items = await storage.getSharedItems();
+      logger.debug(`GET /api/items/shared - Found ${items.length} shared items`);
       res.json(items);
     } catch (error) {
+      logger.error("GET /api/items/shared - Error fetching shared items", { error });
       res.status(500).json({ message: "Failed to fetch shared items" });
     }
   });
 
   app.get("/api/items/checked-out", isAuthenticated, async (req, res) => {
+    logger.info("GET /api/items/checked-out - Fetching checked out items");
     try {
       const items = await storage.getCheckedOutItems();
+      logger.debug(`GET /api/items/checked-out - Found ${items.length} checked out items`);
       res.json(items);
     } catch (error) {
+      logger.error("GET /api/items/checked-out - Error fetching checked out items", { error });
       res.status(500).json({ message: "Failed to fetch checked out items" });
     }
   });

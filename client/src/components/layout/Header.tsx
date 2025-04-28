@@ -24,11 +24,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
       <div className="hidden md:block">
-        <Link href="/">
-          <a className="flex items-center gap-2 font-semibold">
-            <span className="hidden sm:inline-block">GearShare</span>
-          </a>
-        </Link>
+        <div 
+          className="flex items-center gap-2 font-semibold cursor-pointer"
+          onClick={() => window.location.href = '/'}
+        >
+          <span className="hidden sm:inline-block">GearShare</span>
+        </div>
       </div>
       
       {/* Mobile menu button - shown on small screens */}
