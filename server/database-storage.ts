@@ -1,14 +1,17 @@
 import { 
   users, 
   items, 
-  checkoutHistory, 
+  checkoutHistory,
+  locations,
   type User, 
   type InsertUser, 
   type Item, 
   type InsertItem, 
   type CheckoutHistory, 
   type InsertCheckoutHistory,
-  type UpdateCheckoutHistory
+  type UpdateCheckoutHistory,
+  type Location,
+  type InsertLocation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, isNull, desc } from "drizzle-orm";
@@ -225,6 +228,120 @@ export class DatabaseStorage implements IStorage {
       return updatedCheckout;
     } catch (error) {
       logger.error("Failed to return item", { error, itemId });
+      throw error;
+    }
+  }
+
+  // Location methods
+  async getAllLocations(): Promise<Location[]> {
+    try {
+      return await db.select().from(locations).limit(100);
+    } catch (error) {
+      logger.error("Failed to get all locations", { error });
+      throw error;
+    }
+  }
+
+  async getLocation(id: number): Promise<Location | undefined> {
+    try {
+      const [location] = await db.select().from(locations).where(eq(locations.id, id));
+      return location || undefined;
+    } catch (error) {
+      logger.error("Failed to get location by ID", { error, locationId: id });
+      throw error;
+    }
+  }
+
+  async getLocationWithItemCount(id: number): Promise<(Location & { items: number }) | undefined> {
+    try {
+      // First get the location
+      const [location] = await db.select().from(locations).where(eq(locations.id, id));
+      
+      if (!location) {
+        return undefined;
+      }
+      
+      // Count items at this location
+      const itemsAtLocation = await db.select().from(items).where(eq(items.locationId, id));
+      
+      return {
+        ...location,
+        items: itemsAtLocation.length
+      };
+    } catch (error) {
+      logger.error("Failed to get location with item count", { error, locationId: id });
+      throw error;
+    }
+  }
+
+  async getAllLocationsWithItemCounts(): Promise<(Location & { items: number })[]> {
+    try {
+      // Get all locations
+      const allLocations = await db.select().from(locations);
+      
+      // For each location, get the item count
+      const locationsWithCounts = await Promise.all(
+        allLocations.map(async (location) => {
+          const itemsAtLocation = await db.select().from(items).where(eq(items.locationId, location.id));
+          return {
+            ...location,
+            items: itemsAtLocation.length
+          };
+        })
+      );
+      
+      return locationsWithCounts;
+    } catch (error) {
+      logger.error("Failed to get all locations with item counts", { error });
+      throw error;
+    }
+  }
+
+  async createLocation(location: InsertLocation): Promise<Location> {
+    try {
+      const [newLocation] = await db
+        .insert(locations)
+        .values(location)
+        .returning();
+      return newLocation;
+    } catch (error) {
+      logger.error("Failed to create location", { error, locationName: location.name });
+      throw error;
+    }
+  }
+
+  async updateLocation(id: number, updateData: Partial<InsertLocation>): Promise<Location | undefined> {
+    try {
+      const [updatedLocation] = await db
+        .update(locations)
+        .set(updateData)
+        .where(eq(locations.id, id))
+        .returning();
+      return updatedLocation || undefined;
+    } catch (error) {
+      logger.error("Failed to update location", { error, locationId: id });
+      throw error;
+    }
+  }
+
+  async deleteLocation(id: number): Promise<boolean> {
+    try {
+      // First check if there are any items at this location
+      const itemsAtLocation = await db.select().from(items).where(eq(items.locationId, id));
+      
+      if (itemsAtLocation.length > 0) {
+        // Can't delete a location that has items
+        logger.warn("Cannot delete location with items", { locationId: id, itemCount: itemsAtLocation.length });
+        return false;
+      }
+      
+      const result = await db
+        .delete(locations)
+        .where(eq(locations.id, id))
+        .returning({ id: locations.id });
+      return result.length > 0;
+    } catch (error) {
+      logger.error("Failed to delete location", { error, locationId: id });
       throw error;
     }
   }

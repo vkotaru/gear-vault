@@ -41,6 +41,15 @@ export interface IStorage {
   checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory>;
   returnItem(itemId: number, returnData: UpdateCheckoutHistory): Promise<CheckoutHistory | undefined>;
 
+  // Location methods
+  getAllLocations(): Promise<Location[]>;
+  getLocation(id: number): Promise<Location | undefined>;
+  getLocationWithItemCount(id: number): Promise<(Location & { items: number }) | undefined>;
+  getAllLocationsWithItemCounts(): Promise<(Location & { items: number })[]>;
+  createLocation(location: InsertLocation): Promise<Location>;
+  updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined>;
+  deleteLocation(id: number): Promise<boolean>;
+
   // Session store
   sessionStore: session.Store;
 }
@@ -49,21 +58,25 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private items: Map<number, Item>;
   private checkoutHistory: Map<number, CheckoutHistory>;
+  private locations: Map<number, Location>;
   sessionStore: session.Store;
   currentUserId: number;
   currentItemId: number;
   currentCheckoutId: number;
+  currentLocationId: number;
 
   constructor() {
     this.users = new Map();
     this.items = new Map();
     this.checkoutHistory = new Map();
+    this.locations = new Map();
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // Prune expired entries every 24h
     });
     this.currentUserId = 1;
     this.currentItemId = 1;
     this.currentCheckoutId = 1;
+    this.currentLocationId = 1;
     
     // Add default admin user
     this.users.set(1, {
@@ -130,6 +143,7 @@ export class MemStorage implements IStorage {
       category: insertItem.category,
       owner: insertItem.owner,
       isShared: insertItem.isShared ?? false,
+      locationId: insertItem.locationId ?? null,
       storageLocation: insertItem.storageLocation,
       storageAddress: insertItem.storageAddress ?? null,
       condition: insertItem.condition ?? "Good",
@@ -212,6 +226,73 @@ export class MemStorage implements IStorage {
 
     this.checkoutHistory.set(latestCheckout.id, updatedCheckout);
     return updatedCheckout;
+  }
+
+  // Location methods
+  async getAllLocations(): Promise<Location[]> {
+    return Array.from(this.locations.values());
+  }
+
+  async getLocation(id: number): Promise<Location | undefined> {
+    return this.locations.get(id);
+  }
+
+  async getLocationWithItemCount(id: number): Promise<(Location & { items: number }) | undefined> {
+    const location = this.locations.get(id);
+    if (!location) {
+      return undefined;
+    }
+
+    const itemCount = Array.from(this.items.values()).filter(
+      (item) => item.locationId === id
+    ).length;
+
+    return {
+      ...location,
+      items: itemCount
+    };
+  }
+
+  async getAllLocationsWithItemCounts(): Promise<(Location & { items: number })[]> {
+    return Array.from(this.locations.values()).map(location => {
+      const itemCount = Array.from(this.items.values()).filter(
+        (item) => item.locationId === location.id
+      ).length;
+
+      return {
+        ...location,
+        items: itemCount
+      };
+    });
+  }
+
+  async createLocation(location: InsertLocation): Promise<Location> {
+    const id = this.currentLocationId++;
+    const createdAt = new Date();
+    
+    const newLocation: Location = {
+      ...location,
+      id,
+      createdAt
+    };
+    
+    this.locations.set(id, newLocation);
+    return newLocation;
+  }
+
+  async updateLocation(id: number, updateData: Partial<InsertLocation>): Promise<Location | undefined> {
+    const existingLocation = this.locations.get(id);
+    if (!existingLocation) {
+      return undefined;
+    }
+
+    const updatedLocation: Location = { ...existingLocation, ...updateData };
+    this.locations.set(id, updatedLocation);
+    return updatedLocation;
+  }
+
+  async deleteLocation(id: number): Promise<boolean> {
+    return this.locations.delete(id);
   }
 }
 

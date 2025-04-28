@@ -42,7 +42,7 @@ export const items = pgTable("items", {
   category: categoryEnum("category").notNull(),
   owner: text("owner").notNull(),
   isShared: boolean("is_shared").notNull().default(true),
-  locationId: integer("location_id").references(() => locations.id),  // Optional for backwards compatibility
+  locationId: integer("location_id").references(() => locations.id),
   storageLocation: text("storage_location").notNull(),
   storageAddress: text("storage_address"),
   condition: text("condition").default("Good"),
