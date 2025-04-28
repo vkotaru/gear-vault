@@ -1,12 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '../../test-utils';
 import AddItemForm from './AddItemForm';
-import { mockAuthContext } from '../../__mocks__/auth';
-import * as authHooks from '@/hooks/use-auth';
 
-// Mock the useAuth hook
+// Mock useAuth directly in this file
 vi.mock('@/hooks/use-auth', () => ({
-  useAuth: vi.fn(() => mockAuthContext)
+  useAuth: () => ({
+    user: {
+      id: 1,
+      username: 'testuser',
+      password: 'hashed_password'
+    },
+    isLoading: false,
+    error: null,
+    loginMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    },
+    logoutMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    },
+    registerMutation: {
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    }
+  })
 }));
 
 // Mock the toast hook
