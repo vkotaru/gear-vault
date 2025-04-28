@@ -67,28 +67,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/items/:id", isAuthenticated, async (req, res) => {
-    const id = parseInt(req.params.id);
-    logger.info(`GET /api/items/${id} - Fetching item by ID`);
-    try {
-      const item = await storage.getItem(id);
-      if (!item) {
-        logger.warn(`GET /api/items/${id} - Item not found`);
-        return res.status(404).json({ message: "Item not found" });
-      }
-      logger.debug(`GET /api/items/${id} - Item found`, { itemId: id });
-      res.json(item);
-    } catch (error) {
-      logger.error(`GET /api/items/${id} - Error fetching item`, { error, itemId: id });
-      res.status(500).json({ message: "Failed to fetch item" });
-    }
-  });
-
+  // Specific routes come before wildcard routes
   app.get("/api/items/owner/:owner", isAuthenticated, async (req, res) => {
+    const owner = req.params.owner;
+    logger.info(`GET /api/items/owner/${owner} - Fetching items by owner`);
     try {
-      const items = await storage.getItemsByOwner(req.params.owner);
+      const items = await storage.getItemsByOwner(owner);
+      logger.debug(`GET /api/items/owner/${owner} - Found ${items.length} items`);
       res.json(items);
     } catch (error) {
+      logger.error(`GET /api/items/owner/${owner} - Error fetching items`, { error });
       res.status(500).json({ message: "Failed to fetch items" });
     }
   });
@@ -114,6 +102,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logger.error("GET /api/items/checked-out - Error fetching checked out items", { error });
       res.status(500).json({ message: "Failed to fetch checked out items" });
+    }
+  });
+  
+  // Now the generic ID endpoint comes after the more specific routes
+  app.get("/api/items/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    logger.info(`GET /api/items/${id} - Fetching item by ID`);
+    try {
+      const item = await storage.getItem(id);
+      if (!item) {
+        logger.warn(`GET /api/items/${id} - Item not found`);
+        return res.status(404).json({ message: "Item not found" });
+      }
+      logger.debug(`GET /api/items/${id} - Item found`, { itemId: id });
+      res.json(item);
+    } catch (error) {
+      logger.error(`GET /api/items/${id} - Error fetching item`, { error, itemId: id });
+      res.status(500).json({ message: "Failed to fetch item" });
     }
   });
 
