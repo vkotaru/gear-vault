@@ -10,20 +10,14 @@ export default function Footer() {
           © {currentYear} GearShare. All rights reserved.
         </div>
         <div className="flex gap-4 text-sm">
-          <Link href="/privacy">
-            <a className="text-muted-foreground hover:text-foreground">
-              Privacy Policy
-            </a>
+          <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
+            Privacy Policy
           </Link>
-          <Link href="/terms">
-            <a className="text-muted-foreground hover:text-foreground">
-              Terms of Service
-            </a>
+          <Link href="/terms" className="text-muted-foreground hover:text-foreground">
+            Terms of Service
           </Link>
-          <Link href="/contact">
-            <a className="text-muted-foreground hover:text-foreground">
-              Contact
-            </a>
+          <Link href="/contact" className="text-muted-foreground hover:text-foreground">
+            Contact
           </Link>
         </div>
       </div>

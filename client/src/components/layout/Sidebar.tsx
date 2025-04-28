@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -25,9 +25,7 @@ export default function Sidebar() {
     logoutMutation.mutate();
   };
 
-  const handleNavigate = (path: string) => {
-    window.location.href = path;
-  };
+  // Remove redundant handleNavigate function, we'll use Link directly
   
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home },
@@ -58,12 +56,9 @@ export default function Sidebar() {
       >
         {/* Mobile close button */}
         <div className="flex items-center justify-between md:hidden">
-          <div 
-            className="flex items-center gap-2 font-semibold cursor-pointer"
-            onClick={() => handleNavigate('/')}
-          >
+          <Link href="/" className="flex items-center gap-2 font-semibold cursor-pointer">
             <span>GearShare</span>
-          </div>
+          </Link>
           <Button
             variant="ghost" 
             size="icon"
@@ -75,12 +70,9 @@ export default function Sidebar() {
         
         {/* Logo and title - desktop */}
         <div className="hidden h-16 items-center border-b md:flex">
-          <div 
-            className="flex items-center gap-2 font-semibold cursor-pointer"
-            onClick={() => handleNavigate('/')}
-          >
+          <Link href="/" className="flex items-center gap-2 font-semibold cursor-pointer">
             <span>GearShare</span>
-          </div>
+          </Link>
         </div>
         
         {/* Navigation */}
@@ -88,19 +80,22 @@ export default function Sidebar() {
           {navigation.map((item) => {
             const isActive = location === item.href;
             return (
-              <div
+              <Link
                 key={item.name}
-                onClick={() => handleNavigate(item.href)}
+                href={item.href}
                 className={cn(
                   "group flex items-center gap-x-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
                 )}
+                onClick={() => {
+                  if (isMobileOpen) setIsMobileOpen(false);
+                }}
               >
                 <item.icon className={cn("h-5 w-5 shrink-0")} />
                 {item.name}
-              </div>
+              </Link>
             );
           })}
         </nav>
