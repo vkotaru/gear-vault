@@ -1,10 +1,11 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth";
+// Import the mock auth provider instead of the real one
+import { MockAuthProvider } from "@/hooks/use-mock-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import NotFound from "@/pages/not-found";
-import AuthPage from "@/pages/auth-page";
+// Auth page is no longer needed since we're bypassing authentication
 import Dashboard from "@/pages/Dashboard";
 import AllGear from "@/pages/AllGear";
 import MyGear from "@/pages/MyGear";
@@ -24,7 +25,6 @@ function Router() {
       <ProtectedRoute path="/checked-out" component={CheckedOutGear} />
       <ProtectedRoute path="/locations" component={Locations} />
       <ProtectedRoute path="/settings" component={Settings} />
-      <Route path="/auth" component={AuthPage} />
       <Route path="/items/:id">
         {(params) => <ItemDetails id={params.id} />}
       </Route>
@@ -35,12 +35,12 @@ function Router() {
 
 function App() {
   return (
-    <AuthProvider>
+    <MockAuthProvider>
       <TooltipProvider>
         <Toaster />
         <Router />
       </TooltipProvider>
-    </AuthProvider>
+    </MockAuthProvider>
   );
 }
 

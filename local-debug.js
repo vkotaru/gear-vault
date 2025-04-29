@@ -1,108 +1,117 @@
-// Local development debug script
-require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+/**
+ * Local debugging utility for GearVault
+ * This script helps diagnose and fix common React and database issues
+ */
 
-console.log('\n===== Local Development Debug Helper =====');
+console.log('\n🔍 Starting GearVault diagnostic tool...\n');
 
-// 1. Check React version compatibility
-console.log('\nChecking React versions...');
+// Check React installation
 try {
-  const output = execSync('npm list react react-dom', { encoding: 'utf8' });
-  console.log(output);
+  const reactPath = require.resolve('react');
+  console.log('✅ React found at:', reactPath);
   
-  if (output.includes('UNMET PEER DEPENDENCY')) {
-    console.log('\n⚠️  WARNING: You have unmet peer dependencies. This might cause React hooks errors.');
+  const react = require('react');
+  console.log('✅ React version:', react.version);
+  
+  const reactDomPath = require.resolve('react-dom');
+  console.log('✅ ReactDOM found at:', reactDomPath);
+  
+  const reactDom = require('react-dom');
+  console.log('✅ ReactDOM version:', reactDom.version);
+  
+  const reactDomClient = require('react-dom/client');
+  console.log('✅ ReactDOM client API available');
+  
+  if (react.version.split('.')[0] !== reactDom.version.split('.')[0]) {
+    console.log('❌ WARNING: React and ReactDOM versions do not match!');
+    console.log('   This can cause "Invalid hook call" errors.');
+    console.log('   Fix: Run "npm install react@' + reactDom.version + ' react-dom@' + reactDom.version + ' --save-exact"');
+  } else {
+    console.log('✅ React and ReactDOM versions match');
   }
 } catch (error) {
-  console.error('Error checking React versions:', error.message);
+  console.log('❌ Error checking React:', error.message);
 }
 
-// 2. Create a simplified React test file
-const testComponentPath = path.join(__dirname, 'test-component.jsx');
-const testComponentContent = `
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-
-// Simple test component to verify React hooks
-function TestComponent() {
-  const [count, setCount] = useState(0);
+// Check for database connection
+try {
+  require('dotenv').config();
   
-  useEffect(() => {
-    console.log('Component mounted');
-    return () => console.log('Component unmounted');
-  }, []);
-  
-  return (
-    <div>
-      <h1>React Hooks Test</h1>
-      <p>Count: {count}</p>
-      <button onClick={() => setCount(count + 1)}>Increment</button>
-    </div>
-  );
+  if (!process.env.DATABASE_URL) {
+    console.log('❌ No DATABASE_URL found in environment variables');
+    console.log('   Fix: Add DATABASE_URL to your .env file');
+  } else {
+    console.log('✅ DATABASE_URL found in environment');
+    
+    // Test PostgreSQL connection
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL
+    });
+    
+    pool.query('SELECT NOW()', (err, res) => {
+      if (err) {
+        console.log('❌ Database connection failed:', err.message);
+        console.log('   Fix: Check that PostgreSQL is running and DATABASE_URL is correct');
+      } else {
+        console.log('✅ Successfully connected to PostgreSQL database');
+      }
+      
+      // Test database schema
+      pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'items'
+        )
+      `, (err, res) => {
+        if (err) {
+          console.log('❌ Error checking database schema:', err.message);
+        } else if (!res.rows[0].exists) {
+          console.log('❌ Database schema not found. Tables may not be created yet.');
+          console.log('   Fix: Run migrations or initialize the schema');
+        } else {
+          console.log('✅ Database schema found: "items" table exists');
+        }
+        
+        pool.end();
+      });
+    });
+  }
+} catch (error) {
+  console.log('❌ Error checking database:', error.message);
 }
 
-// Render the test component
-const container = document.getElementById('root');
-if (container) {
-  ReactDOM.render(<TestComponent />, container);
-} else {
-  console.error('Root element not found');
-}
-`;
+// Create a simple React component to test hooks
+console.log('\n🧪 Testing React hooks functionality...');
 
 try {
-  fs.writeFileSync(testComponentPath, testComponentContent);
-  console.log(`\nCreated test component at ${testComponentPath}`);
-  console.log('Try running this simple component to test if React hooks work properly on your system.');
+  const React = require('react');
+  
+  // Define a simple component using hooks
+  const TestComponent = () => {
+    const [count, setCount] = React.useState(0);
+    
+    React.useEffect(() => {
+      console.log('✅ React useEffect hook working properly');
+    }, []);
+    
+    console.log('✅ React useState hook working properly');
+    
+    return 'Test component rendered successfully';
+  };
+  
+  // Simulate rendering the component
+  console.log('✅ Component definition succeeded - hooks syntax is valid');
+  console.log('   (Note: This doesn\'t guarantee hooks will work at runtime)');
 } catch (error) {
-  console.error('Error creating test component:', error.message);
+  console.log('❌ Error testing React hooks:', error.message);
+  console.log('   This may indicate problems with your React installation');
 }
 
-// 3. Add custom index.html for local testing
-const localIndexPath = path.join(__dirname, 'local-index.html');
-const localIndexContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>React Hooks Test</title>
-</head>
-<body>
-  <div id="root"></div>
-  <!-- Use a simple script tag to load the test component -->
-  <script type="module">
-    // Simplest possible test to verify React is working
-    import React from 'react';
-    import ReactDOM from 'react-dom/client';
-    
-    function App() {
-      return React.createElement('h1', null, 'Hello World');
-    }
-    
-    ReactDOM.createRoot(document.getElementById('root')).render(
-      React.createElement(App)
-    );
-  </script>
-</body>
-</html>`;
-
-try {
-  fs.writeFileSync(localIndexPath, localIndexContent);
-  console.log(`\nCreated test HTML at ${localIndexPath}`);
-} catch (error) {
-  console.error('Error creating test HTML:', error.message);
-}
-
-// 4. Provide troubleshooting instructions
-console.log('\n===== Debugging Steps =====');
-console.log('1. Check that you have the correct version of React installed (React 18+)');
-console.log('2. Make sure there are no duplicate React installations in node_modules');
-console.log('3. Verify that your .env file has the correct DATABASE_URL');
-console.log('4. Try running a very simple React app to test if hooks work at all');
-console.log('5. Check for ESLint errors related to hooks (eslint-plugin-react-hooks)');
-console.log('\nSolution for the WebSocket error:');
-console.log('- The error is related to HMR (Hot Module Replacement)');
-console.log('- Try adding "WDS_SOCKET_HOST=localhost" to your .env file');
-console.log('- Or start without HMR: NODE_ENV=production npm run dev');
+console.log('\n🔧 Diagnostic suggestions:');
+console.log(' - If you see React version mismatches, try reinstalling matching versions');
+console.log(' - For database connection issues, verify PostgreSQL is running');
+console.log(' - Try the no-auth server with: "./start-local.sh"');
+console.log(' - For React hooks errors, check for multiple React installations');
+console.log('\n');

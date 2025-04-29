@@ -117,10 +117,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Modified to always return a mock admin user for local development
 export function useAuth() {
+  // Try to get the real context first
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  
+  // If we have a real context, use it
+  if (context) {
+    return context;
   }
-  return context;
+  
+  // Otherwise, return a mock admin user (for development without auth)
+  console.log("Using mock admin user for development");
+  return {
+    user: {
+      id: 1,
+      username: "admin",
+      password: ""
+    },
+    isLoading: false,
+    error: null,
+    loginMutation: {
+      mutate: () => {},
+      isPending: false,
+      isError: false,
+      variables: undefined,
+      reset: () => {}
+    } as any,
+    logoutMutation: {
+      mutate: () => {},
+      isPending: false,
+      isError: false,
+      variables: undefined,
+      reset: () => {}
+    } as any,
+    registerMutation: {
+      mutate: () => {},
+      isPending: false,
+      isError: false,
+      variables: undefined,
+      reset: () => {}
+    } as any
+  };
 }
