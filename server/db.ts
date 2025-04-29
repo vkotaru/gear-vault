@@ -2,6 +2,10 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import logger from "./logger";
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 if (!process.env.DATABASE_URL) {
   logger.error("DATABASE_URL not set in environment");

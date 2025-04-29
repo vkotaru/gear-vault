@@ -271,8 +271,10 @@ export class MemStorage implements IStorage {
     const createdAt = new Date();
     
     const newLocation: Location = {
-      ...location,
       id,
+      name: location.name,
+      address: location.address,
+      description: location.description || null,
       createdAt
     };
     
