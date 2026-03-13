@@ -24,7 +24,7 @@ interface StatsResponse {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  
+
   const { data: stats, isLoading } = useQuery<StatsResponse>({
     queryKey: ['/api/stats'],
   });
@@ -33,8 +33,12 @@ export default function Dashboard() {
     { name: 'Available', value: stats?.available || 0 },
     { name: 'Checked Out', value: stats?.checkedOut || 0 },
   ];
-  
-  const COLORS = ['#10b981', '#f97316'];
+
+  // Use CSS variable colors for charts
+  const root = typeof document !== "undefined" ? getComputedStyle(document.documentElement) : null;
+  const primaryColor = root ? `hsl(${root.getPropertyValue("--primary").trim()})` : "hsl(150 45% 30%)";
+  const secondaryColor = root ? `hsl(${root.getPropertyValue("--secondary").trim()})` : "hsl(25 70% 45%)";
+  const COLORS = [primaryColor, secondaryColor];
 
   const categoryData = [
     { name: 'Camping', value: 5 },
@@ -43,13 +47,13 @@ export default function Dashboard() {
     { name: 'Water', value: 1 },
     { name: 'Winter', value: 1 },
   ];
-  
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.username}</h1>
         <p className="text-muted-foreground">Here's an overview of your gear inventory</p>
-        
+
         {isLoading ? (
           <div className="flex justify-center my-12">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -70,7 +74,7 @@ export default function Dashboard() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Available</CardTitle>
@@ -83,7 +87,7 @@ export default function Dashboard() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Checked Out</CardTitle>
@@ -96,7 +100,7 @@ export default function Dashboard() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Shared Items</CardTitle>
@@ -110,7 +114,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Charts */}
             <div className="grid gap-4 md:grid-cols-2 mt-6">
               <Card className="col-span-1">
@@ -131,7 +135,7 @@ export default function Dashboard() {
                           labelLine={false}
                           label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           outerRadius={80}
-                          fill="#8884d8"
+                          fill={primaryColor}
                           dataKey="value"
                         >
                           {chartData.map((entry, index) => (
@@ -144,7 +148,7 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="col-span-1">
                 <CardHeader>
                   <CardTitle>Items by Category</CardTitle>
@@ -164,18 +168,18 @@ export default function Dashboard() {
                           bottom: 5,
                         }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="name" className="text-muted-foreground" />
+                        <YAxis className="text-muted-foreground" />
                         <Tooltip />
-                        <Bar dataKey="value" fill="#8884d8" />
+                        <Bar dataKey="value" fill={primaryColor} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Recent activity */}
             <Card className="mt-6">
               <CardHeader>

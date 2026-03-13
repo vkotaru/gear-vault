@@ -20,7 +20,9 @@ export default function Layout({ children, showFooter = true }: LayoutProps) {
         
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4">
-          {children}
+          <div className="mx-auto" style={{ maxWidth: "var(--content-width, 1280px)" }}>
+            {children}
+          </div>
         </main>
         
         {/* Footer */}

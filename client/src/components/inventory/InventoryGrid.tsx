@@ -14,10 +14,10 @@ interface InventoryGridProps {
   emptyMessage?: string;
 }
 
-export default function InventoryGrid({ 
-  queryKey, 
+export default function InventoryGrid({
+  queryKey,
   title = "Equipment",
-  emptyMessage = "No items found" 
+  emptyMessage = "No items found"
 }: InventoryGridProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,16 +28,15 @@ export default function InventoryGrid({
     refetchOnWindowFocus: false,
   });
 
-  // Filter items based on active category and search query
   const filteredItems = items.filter(item => {
     const matchesCategory = !activeCategory || item.category === activeCategory;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (item.brand && item.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
       item.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.storageLocation.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesCategory && matchesSearch;
   });
 
@@ -52,7 +51,7 @@ export default function InventoryGrid({
 
   const handleCategoryClick = (category: string) => {
     if (activeCategory === category) {
-      setActiveCategory(null); // Deselect if already selected
+      setActiveCategory(null);
     } else {
       setActiveCategory(category);
     }
@@ -68,14 +67,14 @@ export default function InventoryGrid({
 
   if (isError) {
     return (
-      <div className="w-full p-8 text-center border rounded-lg bg-red-50">
-        <Package className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h3 className="text-lg font-semibold text-red-600">Error loading inventory</h3>
-        <p className="text-neutral-600 mb-4">
+      <div className="w-full p-8 text-center border rounded-lg bg-destructive/10">
+        <Package className="mx-auto h-12 w-12 text-destructive/60 mb-4" />
+        <h3 className="text-lg font-semibold text-destructive">Error loading inventory</h3>
+        <p className="text-muted-foreground mb-4">
           {error instanceof Error ? error.message : "Please try again later"}
         </p>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           onClick={() => window.location.reload()}
         >
@@ -88,10 +87,10 @@ export default function InventoryGrid({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-xl font-bold text-neutral-800">{title}</h2>
-        
+        <h2 className="text-xl font-bold">{title}</h2>
+
         <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-neutral-400"/>
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"/>
           <Input
             placeholder="Search gear..."
             className="pl-10 w-full md:w-64"
@@ -100,7 +99,7 @@ export default function InventoryGrid({
           />
         </div>
       </div>
-      
+
       {/* Category Filters */}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -111,7 +110,7 @@ export default function InventoryGrid({
         >
           All Categories
         </Button>
-        
+
         {categoryButtons.map((category) => (
           <Button
             key={category.id}
@@ -124,7 +123,7 @@ export default function InventoryGrid({
           </Button>
         ))}
       </div>
-      
+
       {/* Items Grid */}
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -133,10 +132,10 @@ export default function InventoryGrid({
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
-          <Package className="mx-auto h-12 w-12 text-neutral-400 mb-4" />
+        <div className="text-center py-12 bg-card rounded-lg shadow-md">
+          <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="font-bold text-xl mb-2">No Items Found</h3>
-          <p className="text-neutral-600 max-w-md mx-auto">{emptyMessage}</p>
+          <p className="text-muted-foreground max-w-md mx-auto">{emptyMessage}</p>
         </div>
       )}
     </div>

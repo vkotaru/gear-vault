@@ -26,27 +26,26 @@ export default function InventoryCard({ item }: InventoryCardProps) {
 
   const handleCheckout = async () => {
     if (item.status !== "available") return;
-    
+
     setIsCheckingOut(true);
     try {
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7); // Default checkout for 7 days
-      
+      dueDate.setDate(dueDate.getDate() + 7);
+
       await apiRequest("POST", "/api/checkout", {
         itemId: item.id,
-        checkedOutBy: "Current User", // In a real app, this would be the actual user
+        checkedOutBy: "Current User",
         dueBack: dueDate.toISOString(),
       });
-      
+
       toast({
         title: "Success",
         description: `You've checked out ${item.name} until ${format(dueDate, 'MMM dd, yyyy')}`,
       });
-      
-      // Invalidate queries to refresh the data
+
       queryClient.invalidateQueries({ queryKey: ['/api/items'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-      
+
     } catch (error) {
       toast({
         title: "Error",
@@ -58,23 +57,21 @@ export default function InventoryCard({ item }: InventoryCardProps) {
     }
   };
 
-  // Function to render the thumbnail image or a placeholder
   const renderThumbnail = () => {
-    const imageUrl = item.imageUrls && item.imageUrls.length > 0 
-      ? item.imageUrls[0] 
+    const imageUrl = item.imageUrls && item.imageUrls.length > 0
+      ? item.imageUrls[0]
       : null;
 
     if (imageUrl) {
       return (
-        <img 
-          src={imageUrl} 
-          alt={item.name} 
+        <img
+          src={imageUrl}
+          alt={item.name}
           className="w-full h-full object-cover"
         />
       );
     }
 
-    // Placeholder based on category
     const iconMap: Record<string, string> = {
       "camping": "tent",
       "hiking": "hiking",
@@ -87,16 +84,16 @@ export default function InventoryCard({ item }: InventoryCardProps) {
     const iconName = iconMap[item.category] || "box";
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-neutral-200">
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className="h-12 w-12 text-neutral-400"
+      <div className="w-full h-full flex items-center justify-center bg-muted">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-12 w-12 text-muted-foreground"
         >
           {iconName === "tent" && <path d="M19 20 10 4l-9 16h18z"/>}
           {iconName === "hiking" && <path d="M12 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-4.68 7.37 2.33-2.33a2 2 0 0 1 2.83 0l2.33 2.33M8 12l-1 10 5-1 5 1-1-10"/>}
@@ -130,53 +127,53 @@ export default function InventoryCard({ item }: InventoryCardProps) {
     <Card className="overflow-hidden h-full flex flex-col">
       <div className="h-48 overflow-hidden relative">
         {renderThumbnail()}
-        <Badge 
+        <Badge
           className={`absolute top-2 right-2 ${
-            item.status === 'available' 
-              ? 'bg-green-500 hover:bg-green-600' 
-              : 'bg-amber-500 hover:bg-amber-600'
+            item.status === 'available'
+              ? 'bg-primary hover:bg-primary/90'
+              : 'bg-secondary hover:bg-secondary/90'
           }`}
         >
           {item.status === 'available' ? 'Available' : 'Checked Out'}
         </Badge>
       </div>
-      
+
       <CardContent className="p-4 flex-1">
         <h3 className="font-bold text-lg mb-1">{item.name}</h3>
-        <p className="text-sm text-neutral-600 mb-3">{item.brand || "No brand specified"}</p>
-        
+        <p className="text-sm text-muted-foreground mb-3">{item.brand || "No brand specified"}</p>
+
         <div className="flex items-center mb-3">
           <User className="text-primary h-4 w-4 mr-2" />
           <span className="text-sm">Owner: {item.owner}</span>
         </div>
-        
+
         <div className="flex items-center mb-3">
           <MapPin className="text-primary h-4 w-4 mr-2" />
           <span className="text-sm">Storage: {item.storageLocation}</span>
         </div>
       </CardContent>
-      
+
       <CardFooter className="px-4 pb-4 pt-0 flex justify-between">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="text-primary border-primary hover:bg-primary/10"
           onClick={handleViewDetails}
         >
           <Info className="h-4 w-4 mr-1" /> Details
         </Button>
-        
+
         {item.status === "available" ? (
-          <Button 
-            variant="default" 
-            size="sm" 
+          <Button
+            variant="default"
+            size="sm"
             className="bg-secondary hover:bg-secondary/90"
             onClick={handleCheckout}
             disabled={isCheckingOut}
           >
             {isCheckingOut ? (
               <div className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-secondary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -187,7 +184,7 @@ export default function InventoryCard({ item }: InventoryCardProps) {
             )}
           </Button>
         ) : (
-          <div className="text-amber-500 font-medium text-sm flex items-center">
+          <div className="text-secondary font-medium text-sm flex items-center">
             <ArrowRightCircle className="h-4 w-4 mr-1" /> Due back soon
           </div>
         )}

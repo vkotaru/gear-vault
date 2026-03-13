@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { useThemeSettings } from "@/hooks/use-theme-settings";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import AllGear from "@/pages/AllGear";
@@ -32,6 +33,9 @@ function Router() {
 }
 
 function App() {
+  // Apply saved theme settings on mount
+  useThemeSettings();
+
   return (
     <AuthProvider>
       <TooltipProvider>

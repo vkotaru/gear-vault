@@ -99,16 +99,16 @@ export default function MyGear() {
                       )}
                       <div className="absolute top-2 right-2">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          item.status === 'available' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-amber-100 text-amber-800'
+                          item.status === 'available'
+                            ? 'bg-primary/15 text-primary'
+                            : 'bg-secondary/15 text-secondary'
                         }`}>
                           {item.status === 'available' ? 'Available' : 'Checked Out'}
                         </span>
                       </div>
                       <div className="absolute top-2 left-2">
                         {item.isShared && (
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                          <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
                             Shared
                           </span>
                         )}
