@@ -56,7 +56,7 @@ describe('ItemDetail', () => {
     vi.clearAllMocks();
     
     // Mock the useQuery to return mock item
-    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
       const queryKey = options.queryKey;
       if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
         // Mock checkout history data
@@ -100,7 +100,7 @@ describe('ItemDetail', () => {
 
   it('shows loading state', async () => {
     // Override the mock to show loading state
-    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
       const queryKey = options.queryKey;
       if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
         return {
@@ -127,7 +127,7 @@ describe('ItemDetail', () => {
 
   it('handles error state', async () => {
     // Override the mock to show error state
-    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any) => {
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
       const queryKey = options.queryKey;
       if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
         return {

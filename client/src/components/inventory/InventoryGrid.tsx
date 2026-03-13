@@ -43,7 +43,7 @@ export default function InventoryGrid({
 
   const categoryButtons = [
     { id: "camping", label: "Camping", icon: <TentTree className="h-4 w-4 mr-1" /> },
-    { id: "hiking", label: "Mountain", icon: <Mountain className="h-4 w-4 mr-1" /> },
+    { id: "hiking", label: "Hiking", icon: <Mountain className="h-4 w-4 mr-1" /> },
     { id: "biking", label: "Biking", icon: <Bike className="h-4 w-4 mr-1" /> },
     { id: "water", label: "Water", icon: <Droplets className="h-4 w-4 mr-1" /> },
     { id: "winter", label: "Winter", icon: <CloudSnow className="h-4 w-4 mr-1" /> },

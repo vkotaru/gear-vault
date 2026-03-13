@@ -161,7 +161,7 @@ export default function Locations() {
     queryKey: ["/api/locations"],
     queryFn: async () => {
       try {
-        const res = await apiRequest("GET", "/api/locations/with-counts");
+        const res = await apiRequest("GET", "/api/locations");
         return await res.json();
       } catch (error) {
         console.error("Error fetching locations:", error);

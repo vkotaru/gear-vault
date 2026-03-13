@@ -76,7 +76,7 @@ describe('AllGear', () => {
     // Check if the filter buttons are rendered
     expect(screen.getByText('All Categories')).toBeInTheDocument();
     expect(screen.getByText('Camping')).toBeInTheDocument();
-    expect(screen.getByText('Mountain')).toBeInTheDocument();
+    expect(screen.getByText('Hiking')).toBeInTheDocument();
     expect(screen.getByText('Biking')).toBeInTheDocument();
     expect(screen.getByText('Water')).toBeInTheDocument();
     expect(screen.getByText('Winter')).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('AllGear', () => {
     });
     
     // Click on the Mountain filter
-    fireEvent.click(screen.getByText('Mountain'));
+    fireEvent.click(screen.getByText('Hiking'));
     
     // Only hiking/mountain items should be visible
     await waitFor(() => {

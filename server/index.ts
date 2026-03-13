@@ -5,6 +5,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { seedDevData } from "./seed";
 
 const app = express();
 app.use(express.json());
@@ -50,6 +51,11 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+
+  // Seed sample data in development
+  if (process.env.NODE_ENV === "development") {
+    await seedDevData();
+  }
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

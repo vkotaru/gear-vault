@@ -34,15 +34,7 @@ export default function AllGear() {
       item.brand?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Category filter
-    let matchesCategory = !categoryFilter || categoryFilter === 'all';
-    if (!matchesCategory) {
-      if (categoryFilter === 'hiking') {
-        // The button says "Mountain" but the database uses "hiking"
-        matchesCategory = item.category === 'hiking';
-      } else {
-        matchesCategory = item.category === categoryFilter;
-      }
-    }
+    const matchesCategory = !categoryFilter || categoryFilter === 'all' || item.category === categoryFilter;
     
     // Status filter
     const matchesStatus = !statusFilter || statusFilter === 'all' || item.status === statusFilter;
@@ -106,7 +98,7 @@ export default function AllGear() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" className="mr-1">
               <path fill="currentColor" d="M14,13.25c0,0.69-0.56,1.25-1.25,1.25H5.25C4.56,14.5,4,13.94,4,13.25l0,0c0-0.69,0.56-1.25,1.25-1.25h7.5 C13.44,12,14,12.56,14,13.25L14,13.25z M14,18.25c0,0.69-0.56,1.25-1.25,1.25H5.25C4.56,19.5,4,18.94,4,18.25l0,0 c0-0.69,0.56-1.25,1.25-1.25h7.5C13.44,17,14,17.56,14,18.25L14,18.25z M20,8.25c0,0.69-0.56,1.25-1.25,1.25h-7.5 C10.56,9.5,10,8.94,10,8.25l0,0c0-0.69,0.56-1.25,1.25-1.25h7.5C19.44,7,20,7.56,20,8.25L20,8.25z M20,3.25 C20,3.94,19.44,4.5,18.75,4.5h-7.5C10.56,4.5,10,3.94,10,3.25l0,0c0-0.69,0.56-1.25,1.25-1.25h7.5C19.44,2,20,2.56,20,3.25L20,3.25z"/>
             </svg>
-            Mountain
+            Hiking
           </Button>
           
           <Button 

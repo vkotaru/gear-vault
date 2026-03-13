@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import logger from "./logger";
 
 declare global {
   namespace Express {
@@ -22,47 +23,36 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  // For the default admin user with plain-text password
-  if (!stored.includes('.')) {
-    return supplied === stored;
-  }
-  
   const [hashed, salt] = stored.split(".");
+  if (!hashed || !salt) return false;
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Create a default admin user if none exists
-async function ensureAdminUser() {
-  try {
-    const adminUser = await storage.getUserByUsername('admin');
-    if (!adminUser) {
-      const defaultPassword = await hashPassword('password');
-      await storage.createUser({
-        username: 'admin',
-        password: defaultPassword
-      });
-      console.log('Default admin user created with username: admin, password: password');
-    }
-  } catch (error) {
-    console.error('Error creating default admin user:', error);
+const isDev = process.env.NODE_ENV === "development";
+
+// Ensure a dev user exists for local development
+async function ensureDevUser(): Promise<SelectUser> {
+  let user = await storage.getUserByUsername("dev");
+  if (!user) {
+    const hashedPassword = await hashPassword("dev");
+    user = await storage.createUser({ username: "dev", password: hashedPassword });
+    logger.info("Created default dev user (username: dev)");
   }
+  return user;
 }
 
 export function setupAuth(app: Express) {
-  // Create default admin user
-  ensureAdminUser();
-  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "gearshare-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
-    cookie: { 
+    cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
   };
 
   app.set("trust proxy", 1);
@@ -86,6 +76,22 @@ export function setupAuth(app: Express) {
     const user = await storage.getUser(id);
     done(null, user);
   });
+
+  // In development, auto-authenticate all requests as the dev user
+  if (isDev) {
+    logger.info("Development mode: auto-authenticating all requests as dev user");
+    app.use(async (req, _res, next) => {
+      if (!req.isAuthenticated()) {
+        const devUser = await ensureDevUser();
+        req.login(devUser, (err) => {
+          if (err) return next(err);
+          next();
+        });
+      } else {
+        next();
+      }
+    });
+  }
 
   app.post("/api/register", async (req, res, next) => {
     const existingUser = await storage.getUserByUsername(req.body.username);
@@ -117,6 +123,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    const { password, ...user } = req.user!;
+    res.json(user);
   });
 }

@@ -198,7 +198,7 @@ export default function AddItemForm() {
                   <FormItem>
                     <FormLabel>Brand/Model</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter brand or model" {...field} />
+                      <Input placeholder="Enter brand or model" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,7 +240,7 @@ export default function AddItemForm() {
                   <FormItem>
                     <FormLabel>Storage Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Full address (optional)" {...field} />
+                      <Input placeholder="Full address (optional)" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -255,7 +255,7 @@ export default function AddItemForm() {
                     <FormLabel>Condition</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      defaultValue={field.value ?? undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -281,11 +281,12 @@ export default function AddItemForm() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Enter item description" 
+                    <Textarea
+                      placeholder="Enter item description"
                       className="resize-none"
                       rows={3}
-                      {...field} 
+                      {...field}
+                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />

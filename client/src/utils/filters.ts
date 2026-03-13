@@ -25,10 +25,6 @@ export function filterItemsBySearchTerm(items: Item[], searchTerm: string) {
 export function filterItemsByCategory(items: Item[], categoryFilter: string) {
   if (!categoryFilter || categoryFilter === 'all') return items;
   
-  if (categoryFilter === 'mountain') {
-    return items.filter(item => item.category === 'hiking');
-  }
-  
   return items.filter(item => item.category === categoryFilter);
 }
 

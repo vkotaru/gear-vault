@@ -1,7 +1,7 @@
-import { Route } from "wouter";
+import { Route, Redirect } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
-// This is a simplified version that bypasses authentication
-// All routes are automatically accessible without login
 export function ProtectedRoute({
   path,
   component: Component,
@@ -9,6 +9,30 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  // Always render the component directly without auth checks
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      </Route>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Not authenticated</h2>
+            <p className="text-muted-foreground">Please check your server configuration.</p>
+          </div>
+        </div>
+      </Route>
+    );
+  }
+
   return <Route path={path} component={Component} />;
 }

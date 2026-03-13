@@ -31,6 +31,10 @@ export default function MyGear() {
   
   const { data: items, isLoading } = useQuery<Item[]>({
     queryKey: ['/api/items/owner', user?.username],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/items/owner/${user!.username}`);
+      return await res.json();
+    },
     enabled: !!user,
   });
   

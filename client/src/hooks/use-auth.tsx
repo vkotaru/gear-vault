@@ -19,7 +19,8 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const {
@@ -44,8 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
       });
-      // Redirect to dashboard
-      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
@@ -67,8 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${user.username}!`,
       });
-      // Redirect to dashboard
-      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
@@ -89,8 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
-      // Redirect to auth page
-      window.location.href = "/auth";
     },
     onError: (error: Error) => {
       toast({
@@ -117,46 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Modified to always return a mock admin user for local development
-export function useAuth() {
-  // Try to get the real context first
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  
-  // If we have a real context, use it
-  if (context) {
-    return context;
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
-  // Otherwise, return a mock admin user (for development without auth)
-  console.log("Using mock admin user for development");
-  return {
-    user: {
-      id: 1,
-      username: "admin",
-      password: ""
-    },
-    isLoading: false,
-    error: null,
-    loginMutation: {
-      mutate: () => {},
-      isPending: false,
-      isError: false,
-      variables: undefined,
-      reset: () => {}
-    } as any,
-    logoutMutation: {
-      mutate: () => {},
-      isPending: false,
-      isError: false,
-      variables: undefined,
-      reset: () => {}
-    } as any,
-    registerMutation: {
-      mutate: () => {},
-      isPending: false,
-      isError: false,
-      variables: undefined,
-      reset: () => {}
-    } as any
-  };
+  return context;
 }
