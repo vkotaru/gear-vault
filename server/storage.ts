@@ -24,7 +24,9 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
 
   // Item methods
   getAllItems(): Promise<Item[]>;
@@ -82,7 +84,11 @@ export class MemStorage implements IStorage {
     this.users.set(1, {
       id: 1,
       username: "admin",
-      password: "password"
+      password: "password",
+      googleId: null,
+      email: null,
+      displayName: null,
+      avatarUrl: null,
     });
   }
 
@@ -97,11 +103,25 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId,
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, googleId: null, email: null, displayName: null, avatarUrl: null };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...data };
+    this.users.set(id, updated);
+    return updated;
   }
 
   // Item methods

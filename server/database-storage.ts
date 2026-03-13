@@ -57,6 +57,30 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+      return user || undefined;
+    } catch (error) {
+      logger.error("Failed to get user by Google ID", { error });
+      throw error;
+    }
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
+    try {
+      const [user] = await db
+        .update(users)
+        .set(data)
+        .where(eq(users.id, id))
+        .returning();
+      return user || undefined;
+    } catch (error) {
+      logger.error("Failed to update user", { error, userId: id });
+      throw error;
+    }
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
       const [user] = await db

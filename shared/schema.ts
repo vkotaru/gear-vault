@@ -23,6 +23,10 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  googleId: text("google_id").unique(),
+  email: text("email"),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
 });
 
 // Location schema

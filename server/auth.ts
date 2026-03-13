@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -44,13 +45,18 @@ async function ensureDevUser(): Promise<SelectUser> {
 }
 
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET && process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET environment variable is required in production");
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "gearshare-secret",
+    secret: process.env.SESSION_SECRET || "gearshare-dev-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   };
@@ -60,6 +66,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Local strategy (username/password)
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
@@ -70,6 +77,92 @@ export function setupAuth(app: Express) {
       }
     }),
   );
+
+  // Google OAuth strategy (only if credentials are configured)
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (googleClientId && googleClientSecret) {
+    const callbackURL = process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback";
+
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: googleClientId,
+          clientSecret: googleClientSecret,
+          callbackURL,
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            // Check if user already exists with this Google ID
+            let user = await storage.getUserByGoogleId(profile.id);
+
+            if (user) {
+              // Update profile info on each login
+              user = await storage.updateUser(user.id, {
+                displayName: profile.displayName,
+                email: profile.emails?.[0]?.value || user.email,
+                avatarUrl: profile.photos?.[0]?.value || user.avatarUrl,
+              }) || user;
+              return done(null, user);
+            }
+
+            // Check if a user exists with the same email
+            const email = profile.emails?.[0]?.value;
+            if (email) {
+              const existingUser = await storage.getUserByUsername(email);
+              if (existingUser) {
+                // Link Google account to existing user
+                user = await storage.updateUser(existingUser.id, {
+                  googleId: profile.id,
+                  displayName: profile.displayName,
+                  email,
+                  avatarUrl: profile.photos?.[0]?.value,
+                }) || existingUser;
+                return done(null, user);
+              }
+            }
+
+            // Create a new user
+            const username = email || `google-${profile.id}`;
+            const newUser = await storage.createUser({
+              username,
+              password: await hashPassword(randomBytes(32).toString("hex")), // Random password for OAuth users
+            });
+
+            user = await storage.updateUser(newUser.id, {
+              googleId: profile.id,
+              displayName: profile.displayName,
+              email,
+              avatarUrl: profile.photos?.[0]?.value,
+            }) || newUser;
+
+            return done(null, user);
+          } catch (error) {
+            return done(error as Error);
+          }
+        },
+      ),
+    );
+
+    // Google OAuth routes
+    app.get(
+      "/api/auth/google",
+      passport.authenticate("google", { scope: ["profile", "email"] }),
+    );
+
+    app.get(
+      "/api/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/login" }),
+      (_req, res) => {
+        res.redirect("/");
+      },
+    );
+
+    logger.info("Google OAuth configured");
+  } else if (process.env.NODE_ENV === "production") {
+    logger.warn("Google OAuth not configured — GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET not set");
+  }
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
@@ -92,6 +185,14 @@ export function setupAuth(app: Express) {
       }
     });
   }
+
+  // Endpoint to check if Google OAuth is available
+  app.get("/api/auth/providers", (_req, res) => {
+    res.json({
+      local: true,
+      google: !!(googleClientId && googleClientSecret),
+    });
+  });
 
   app.post("/api/register", async (req, res, next) => {
     const existingUser = await storage.getUserByUsername(req.body.username);
