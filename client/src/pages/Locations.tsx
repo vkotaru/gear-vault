@@ -4,6 +4,7 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Map, Plus, Search, Edit, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -323,10 +324,14 @@ export default function Locations() {
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 Main St, Anytown, ST 12345" {...field} />
+                        <AddressAutocomplete
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Start typing an address..."
+                        />
                       </FormControl>
                       <FormDescription>
-                        Where is this location? Include as much detail as needed.
+                        Start typing to search real addresses, or enter one manually.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

@@ -472,6 +472,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Address autocomplete, proxied to OpenStreetMap Nominatim (free, no API key).
+  // Proxied server-side so we can set a proper User-Agent per their usage policy.
+  app.get("/api/geocode", isAuthenticated, async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    if (q.length < 3) return res.json([]);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(q)}`;
+      const upstream = await fetch(url, {
+        headers: { "User-Agent": "GearVault/1.0 (self-hosted gear inventory)" },
+      });
+      if (!upstream.ok) throw new Error(`geocode upstream responded ${upstream.status}`);
+      const data = (await upstream.json()) as Array<{ display_name: string; lat: string; lon: string }>;
+      res.json(data.map((d) => ({ label: d.display_name, lat: d.lat, lon: d.lon })));
+    } catch (error) {
+      logger.error("GET /api/geocode - Address lookup failed", { error });
+      res.status(502).json({ message: "Address lookup failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
