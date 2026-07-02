@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { insertItemSchema } from "@shared/schema";
+import { insertItemSchema, type Item } from "@shared/schema";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { X, Plus, Upload, Image } from "lucide-react";
 
@@ -45,8 +45,23 @@ const formSchema = insertItemSchema.extend({
   storageLocation: z.string().min(1, "Storage location is required"),
 });
 
-export default function AddItemForm() {
-  const [open, setOpen] = useState(false);
+interface AddItemFormProps {
+  /** When provided, the form edits this item instead of creating a new one. */
+  item?: Item;
+  /** Optional controlled open state (used for the standalone edit route). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export default function AddItemForm({ item, open: controlledOpen, onOpenChange }: AddItemFormProps = {}) {
+  const isEdit = !!item;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) onOpenChange?.(value);
+    else setInternalOpen(value);
+  };
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -60,88 +75,111 @@ export default function AddItemForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      brand: "",
-      category: "camping",
-      owner: "",
-      isShared: true,
-      storageLocation: "",
-      storageAddress: "",
-      condition: "Good",
-      imageUrls: [],
-      status: "available",
-    },
+    defaultValues: item
+      ? {
+          name: item.name,
+          description: item.description ?? "",
+          brand: item.brand ?? "",
+          category: item.category,
+          owner: item.owner,
+          isShared: item.isShared,
+          storageLocation: item.storageLocation,
+          storageAddress: item.storageAddress ?? "",
+          condition: item.condition ?? "Good",
+          imageUrls: item.imageUrls ?? [],
+          status: item.status,
+        }
+      : {
+          name: "",
+          description: "",
+          brand: "",
+          category: "camping",
+          owner: "",
+          isShared: true,
+          storageLocation: "",
+          storageAddress: "",
+          condition: "Good",
+          imageUrls: [],
+          status: "available",
+        },
   });
 
-  const addItemMutation = useMutation({
+  const itemMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       const formData = new FormData();
-      
+
       // Append files to form data
       if (selectedFiles.length > 0) {
         selectedFiles.forEach((file) => {
           formData.append("images", file);
         });
       }
-      
+
       // Append item JSON data
       formData.append("item", JSON.stringify(data));
-      
-      const response = await fetch("/api/items", {
-        method: "POST",
+
+      const response = await fetch(isEdit ? `/api/items/${item!.id}` : "/api/items", {
+        method: isEdit ? "PUT" : "POST",
         body: formData,
         credentials: "include",
       });
-      
+
       if (!response.ok) {
-        throw new Error("Failed to add item");
+        throw new Error(isEdit ? "Failed to update item" : "Failed to add item");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/items'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-      
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: [`/api/items/${item!.id}`] });
+      }
+
       toast({
         title: "Success",
-        description: "Item was added successfully",
+        description: isEdit ? "Item was updated successfully" : "Item was added successfully",
       });
-      
-      form.reset();
-      resetFiles();
+
+      if (!isEdit) {
+        form.reset();
+        resetFiles();
+      }
       setOpen(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to add item: ${error.message}`,
+        description: `Failed to ${isEdit ? "update" : "add"} item: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    addItemMutation.mutate(values);
+    itemMutation.mutate(values);
   }
 
   const fileInputRef = useState<HTMLInputElement | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" /> Add New Item
-        </Button>
-      </DialogTrigger>
-      
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" /> Add New Item
+          </Button>
+        </DialogTrigger>
+      )}
+
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">Add New Equipment</DialogTitle>
+          <DialogTitle className="text-xl">{isEdit ? "Edit Equipment" : "Add New Equipment"}</DialogTitle>
           <DialogDescription>
-            Fill out the form below to add a new item to the inventory.
+            {isEdit
+              ? "Update the details below. Uploading photos adds to the existing ones."
+              : "Fill out the form below to add a new item to the inventory."}
           </DialogDescription>
         </DialogHeader>
         
@@ -376,18 +414,18 @@ export default function AddItemForm() {
               </Button>
               <Button
                 type="submit"
-                disabled={addItemMutation.isPending}
+                disabled={itemMutation.isPending}
               >
-                {addItemMutation.isPending ? (
+                {itemMutation.isPending ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Adding...
+                    {isEdit ? "Saving..." : "Adding..."}
                   </>
                 ) : (
-                  'Add Item'
+                  isEdit ? 'Save Changes' : 'Add Item'
                 )}
               </Button>
             </DialogFooter>

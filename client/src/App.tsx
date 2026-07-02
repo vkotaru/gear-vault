@@ -7,6 +7,7 @@ import { useThemeSettings } from "@/hooks/use-theme-settings";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/Dashboard";
+import EditItem from "@/pages/EditItem";
 import AllGear from "@/pages/AllGear";
 import MyGear from "@/pages/MyGear";
 import SharedGear from "@/pages/SharedGear";
@@ -26,6 +27,9 @@ function Router() {
       <ProtectedRoute path="/checked-out" component={CheckedOutGear} />
       <ProtectedRoute path="/locations" component={Locations} />
       <ProtectedRoute path="/settings" component={Settings} />
+      <Route path="/items/:id/edit">
+        {(params) => <EditItem id={params.id} />}
+      </Route>
       <Route path="/items/:id">
         {(params) => <ItemDetails id={params.id} />}
       </Route>

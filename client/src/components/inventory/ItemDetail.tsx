@@ -364,7 +364,11 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
               </div>
 
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center">
+                <Button
+                  variant="outline"
+                  className="flex items-center"
+                  onClick={() => setLocation(`/items/${itemId}/edit`)}
+                >
                   <Edit className="h-4 w-4 mr-2" /> Edit
                 </Button>
 
