@@ -72,10 +72,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertItemSchema = createInsertSchema(items).omit({
-  id: true,
-  addedOn: true,
-});
+export const insertItemSchema = createInsertSchema(items)
+  .omit({
+    id: true,
+    addedOn: true,
+  })
+  .extend({
+    // Optional purchase/added date. Accepts an ISO date string (from JSON) and
+    // coerces it to a Date; when omitted, the DB defaults to now().
+    addedOn: z.coerce.date().optional(),
+  });
 
 export const insertCheckoutHistorySchema = createInsertSchema(checkoutHistory).omit({
   id: true,
