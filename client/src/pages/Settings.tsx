@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,14 @@ export default function Settings() {
   const { toast } = useToast();
   const { settings, updateSettings, resetSettings } = useThemeSettings();
   const [location, setLocation] = useLocation();
+
+  // Real system stats for the System tab.
+  const { data: stats } = useQuery<{ total: number; available: number; checkedOut: number }>({
+    queryKey: ["/api/stats"],
+  });
+  const { data: locations } = useQuery<Array<{ id: number }>>({
+    queryKey: ["/api/locations"],
+  });
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const tabFromUrl = searchParams.get("tab");
 
@@ -468,11 +477,11 @@ export default function Settings() {
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Total Items</span>
-                    <span className="text-muted-foreground">Loading...</span>
+                    <span className="text-muted-foreground">{stats ? stats.total : "…"}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Storage Locations</span>
-                    <span className="text-muted-foreground">Loading...</span>
+                    <span className="text-muted-foreground">{locations ? locations.length : "…"}</span>
                   </div>
                   <div className="flex justify-between py-2">
                     <span className="font-medium">Database Status</span>
