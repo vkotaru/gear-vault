@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item } from "@shared/schema";
 import { 
   Select,
@@ -15,12 +13,16 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus, Search, Filter, Tag } from "lucide-react";
 import AddItemForm from "@/components/inventory/AddItemForm";
+import GearItemsView from "@/components/inventory/GearItemsView";
+import ViewToggle from "@/components/inventory/ViewToggle";
+import { useViewMode } from "@/hooks/use-view-mode";
 
 export default function AllGear() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  
+  const [view, setView] = useViewMode("allgear-view");
+
   const { data: items, isLoading } = useQuery<Item[]>({
     queryKey: ['/api/items']
   });
@@ -170,55 +172,14 @@ export default function AllGear() {
           </div>
         ) : (
           <>
-            {/* Inventory Grid */}
+            {/* Inventory */}
             {filteredItems && filteredItems.length > 0 ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredItems.map((item) => (
-                  <Card 
-                    key={item.id}
-                    className="h-full cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => window.location.href = `/items/${item.id}`}
-                  >
-                    <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                      {item.imageUrls && item.imageUrls.length > 0 ? (
-                        <img 
-                          src={item.imageUrls[0]} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <Tag className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          item.status === 'available'
-                            ? 'bg-primary/15 text-primary'
-                            : 'bg-secondary/15 text-secondary'
-                        }`}>
-                          {item.status === 'available' ? 'Available' : 'Checked Out'}
-                        </span>
-                      </div>
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <CardTitle className="text-lg">{item.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">
-                        {item.brand && `${item.brand} • `}
-                        {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-                      </p>
-                      {item.description && (
-                        <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                      Location: {item.storageLocation}
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              <>
+                <div className="flex justify-end mb-4">
+                  <ViewToggle view={view} onChange={setView} />
+                </div>
+                <GearItemsView items={filteredItems} view={view} />
+              </>
             ) : (
               <div className="text-center py-12 border rounded-lg bg-muted/20">
                 <div className="flex justify-center">

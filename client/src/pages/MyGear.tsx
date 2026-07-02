@@ -5,13 +5,6 @@ import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Item } from '@shared/schema';
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,13 +14,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, MoreVertical, Tag, Trash, Edit, Share } from 'lucide-react';
+import { Loader2, MoreVertical, Tag, Trash, Edit } from 'lucide-react';
 import AddItemForm from '@/components/inventory/AddItemForm';
+import GearItemsView from '@/components/inventory/GearItemsView';
+import ViewToggle from '@/components/inventory/ViewToggle';
+import { useViewMode } from '@/hooks/use-view-mode';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export default function MyGear() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [view, setView] = useViewMode("mygear-view");
   
   const { data: items, isLoading } = useQuery<Item[]>({
     queryKey: ['/api/items/owner', user?.username],
@@ -82,91 +79,46 @@ export default function MyGear() {
         ) : (
           <>
             {items && items.length > 0 ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {items.map((item) => (
-                  <Card key={item.id} className="h-full">
-                    <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                      {item.imageUrls && item.imageUrls.length > 0 ? (
-                        <img 
-                          src={item.imageUrls[0]} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <Tag className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          item.status === 'available'
-                            ? 'bg-primary/15 text-primary'
-                            : 'bg-secondary/15 text-secondary'
-                        }`}>
-                          {item.status === 'available' ? 'Available' : 'Checked Out'}
-                        </span>
-                      </div>
-                      <div className="absolute top-2 left-2">
-                        {item.isShared && (
-                          <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
-                            Shared
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">
-                          <Link href={`/items/${item.id}`}>
-                            <a className="hover:underline">{item.name}</a>
-                          </Link>
-                        </CardTitle>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="-mr-2">
-                              <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <Link href={`/items/${item.id}`}>
-                              <DropdownMenuItem>
-                                <Tag className="mr-2 h-4 w-4" />
-                                <span>View Details</span>
-                              </DropdownMenuItem>
-                            </Link>
-                            <Link href={`/items/${item.id}/edit`}>
-                              <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Edit Item</span>
-                              </DropdownMenuItem>
-                            </Link>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDelete(item.id)}>
-                              <Trash className="mr-2 h-4 w-4" />
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">
-                        {item.brand && `${item.brand} • `}
-                        {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-                      </p>
-                      {item.description && (
-                        <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                      Location: {item.storageLocation}
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              <>
+                <div className="flex justify-end mb-4">
+                  <ViewToggle view={view} onChange={setView} />
+                </div>
+                <GearItemsView
+                  items={items}
+                  view={view}
+                  renderMenu={(item) => (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="-mr-2">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <Link href={`/items/${item.id}`}>
+                          <DropdownMenuItem>
+                            <Tag className="mr-2 h-4 w-4" />
+                            <span>View Details</span>
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href={`/items/${item.id}/edit`}>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit Item</span>
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDelete(item.id)}>
+                          <Trash className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                />
+              </>
             ) : (
               <div className="text-center py-12 border rounded-lg bg-muted/20">
                 <div className="flex justify-center">
