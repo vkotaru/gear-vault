@@ -64,8 +64,12 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
   };
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
-  const { 
+
+  // Existing images to keep (edit mode). Removing one drops it from this list;
+  // the server treats this as the authoritative "keep" set and appends uploads.
+  const [keptImages, setKeptImages] = useState<string[]>(item?.imageUrls ?? []);
+
+  const {
     selectedFiles, 
     previewUrls, 
     handleFileChange, 
@@ -115,8 +119,10 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
         });
       }
 
-      // Append item JSON data
-      formData.append("item", JSON.stringify(data));
+      // Append item JSON data. In edit mode, send the images we're keeping so
+      // the server can drop the removed ones; new files are appended server-side.
+      const payload = isEdit ? { ...data, imageUrls: keptImages } : data;
+      formData.append("item", JSON.stringify(payload));
 
       const response = await fetch(isEdit ? `/api/items/${item!.id}` : "/api/items", {
         method: isEdit ? "PUT" : "POST",
@@ -335,7 +341,27 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
             {/* Image Upload */}
             <div>
               <FormLabel>Photos</FormLabel>
-              <div 
+
+              {/* Existing photos (edit mode) — click X to remove */}
+              {isEdit && keptImages.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-2 mb-3">
+                  {keptImages.map((url) => (
+                    <div key={url} className="relative h-20 bg-muted rounded overflow-hidden">
+                      <img src={url} alt="Item photo" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setKeptImages((prev) => prev.filter((u) => u !== url))}
+                        className="absolute top-0 right-0 bg-destructive text-destructive-foreground p-1 rounded-bl-md"
+                        aria-label="Remove photo"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div
                 className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary transition-colors"
                 onClick={() => document.getElementById('file-upload')?.click()}
               >

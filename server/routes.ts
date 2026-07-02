@@ -181,20 +181,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       let updateData: any = {};
-      
+
       // If there's a JSON item data
       if (req.body.item) {
         updateData = JSON.parse(req.body.item);
       }
-      
-      // Add image URLs if files were uploaded
+
+      // Determine the final image list: the client sends the images it wants to
+      // keep (removals are simply omitted); newly uploaded files are appended.
+      const keptImages: string[] = Array.isArray(updateData.imageUrls)
+        ? updateData.imageUrls
+        : (existingItem.imageUrls || []);
       const files = req.files as Express.Multer.File[];
-      if (files && files.length > 0) {
-        const newImageUrls = files.map(file => `/api/uploads/${file.filename}`);
-        // Combine existing and new images
-        updateData.imageUrls = [...(existingItem.imageUrls || []), ...newImageUrls];
+      const newImageUrls = (files || []).map(file => `/api/uploads/${file.filename}`);
+      updateData.imageUrls = [...keptImages, ...newImageUrls];
+
+      // Best-effort cleanup: delete locally-stored files that are no longer
+      // referenced (ignore external URLs like placeholders).
+      const removed = (existingItem.imageUrls || []).filter(
+        (url) => !updateData.imageUrls.includes(url) && url.startsWith("/api/uploads/")
+      );
+      for (const url of removed) {
+        const filePath = path.join(uploadsDir, path.basename(url));
+        fs.promises.unlink(filePath).catch((error) => {
+          logger.warn("Could not delete removed image file", { error, filePath });
+        });
       }
-      
+
       const updatedItem = await storage.updateItem(id, updateData);
       res.json(updatedItem);
     } catch (error) {
