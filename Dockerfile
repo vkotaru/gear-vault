@@ -26,11 +26,9 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
+# Bundled server + migrator (dist/migrate.js is self-contained; no schema files
+# or drizzle-kit needed at runtime).
 COPY --from=builder /app/dist ./dist
-
-# Files needed by `drizzle-kit push` at startup.
-COPY drizzle.config.ts ./drizzle.config.ts
-COPY shared ./shared
 
 # Persistent location for uploaded images (mount a volume here).
 ENV UPLOADS_DIR=/app/uploads

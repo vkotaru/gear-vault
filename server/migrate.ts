@@ -1,0 +1,108 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+import { Pool } from "pg";
+
+/**
+ * Deterministic, idempotent schema migration run on every container start.
+ *
+ * Unlike `drizzle-kit push` (which is interactive and silently no-ops without a
+ * TTY), this applies plain idempotent DDL: it creates anything missing and adds
+ * new columns to existing tables, so it is safe on both a fresh database and one
+ * created by an earlier version. Keep it in sync with shared/schema.ts.
+ *
+ * The session table (user_sessions) is created by connect-pg-simple at runtime,
+ * so it is intentionally not managed here.
+ */
+const SQL = `
+DO $$ BEGIN
+  CREATE TYPE category AS ENUM ('camping','hiking','biking','water','winter','other');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE status AS ENUM ('available','checked_out');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+CREATE TABLE IF NOT EXISTS users (
+  id serial PRIMARY KEY,
+  username text NOT NULL UNIQUE,
+  password text NOT NULL,
+  google_id text UNIQUE,
+  email text,
+  display_name text,
+  avatar_url text
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  address text NOT NULL,
+  description text,
+  owner text,
+  created_at timestamp NOT NULL DEFAULT now()
+);
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS owner text;
+
+CREATE TABLE IF NOT EXISTS spots (
+  id serial PRIMARY KEY,
+  location_id integer NOT NULL REFERENCES locations(id),
+  name text NOT NULL,
+  created_at timestamp NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS items (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  description text,
+  brand text,
+  category category NOT NULL,
+  owner text NOT NULL,
+  is_shared boolean NOT NULL DEFAULT true,
+  location_id integer REFERENCES locations(id),
+  spot_id integer REFERENCES spots(id),
+  storage_location text NOT NULL,
+  storage_address text,
+  condition text DEFAULT 'Good',
+  image_urls text[],
+  status status NOT NULL DEFAULT 'available',
+  added_on timestamp NOT NULL DEFAULT now()
+);
+ALTER TABLE items ADD COLUMN IF NOT EXISTS spot_id integer REFERENCES spots(id);
+
+CREATE TABLE IF NOT EXISTS checkout_history (
+  id serial PRIMARY KEY,
+  item_id integer NOT NULL REFERENCES items(id),
+  checked_out_by text NOT NULL,
+  checked_out_on timestamp NOT NULL DEFAULT now(),
+  due_back timestamp,
+  returned_on timestamp
+);
+
+-- One-time backfill: legacy places created before ownership existed have a NULL
+-- owner. Assign them to the sole user (only when there is exactly one), so a
+-- single-user install needs no manual step. Multi-user installs are left
+-- untouched to avoid mis-assigning.
+UPDATE locations SET owner = (SELECT username FROM users ORDER BY id LIMIT 1)
+WHERE owner IS NULL AND (SELECT count(*) FROM users) = 1;
+`;
+
+async function main() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    console.error("DATABASE_URL is not set");
+    process.exit(1);
+  }
+
+  const pool = new Pool({ connectionString });
+  try {
+    await pool.query(SQL);
+    console.log("Schema is up to date.");
+  } finally {
+    await pool.end();
+  }
+}
+
+main().catch((err) => {
+  console.error("Migration failed:", err);
+  process.exit(1);
+});

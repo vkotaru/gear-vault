@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
 
-# Apply the database schema (idempotent — drizzle-kit only pushes diffs).
-# Set SKIP_DB_PUSH=1 to skip this, e.g. if you manage migrations separately.
-if [ "${SKIP_DB_PUSH:-0}" != "1" ]; then
-  echo "==> Syncing database schema (drizzle-kit push)…"
-  npm run db:push
+# Apply the database schema deterministically (idempotent DDL, no prompts).
+# Set SKIP_MIGRATE=1 to skip, e.g. if you manage the schema separately.
+if [ "${SKIP_MIGRATE:-0}" != "1" ]; then
+  echo "==> Applying database schema…"
+  node dist/migrate.js
 fi
 
 echo "==> Starting server on port ${PORT:-5000}…"
