@@ -34,6 +34,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertItemSchema, type Item } from "@shared/schema";
+import LocationPicker from "@/components/inventory/LocationPicker";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { X, Plus, Upload, Image } from "lucide-react";
 
@@ -87,6 +88,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           category: item.category,
           owner: item.owner,
           isShared: item.isShared,
+          locationId: item.locationId ?? null,
           storageLocation: item.storageLocation,
           storageAddress: item.storageAddress ?? "",
           condition: item.condition ?? "Good",
@@ -100,6 +102,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           category: "camping",
           owner: "",
           isShared: true,
+          locationId: null,
           storageLocation: "",
           storageAddress: "",
           condition: "Good",
@@ -267,30 +270,26 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                 control={form.control}
                 name="storageLocation"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Storage Location*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Where is this item stored?" {...field} />
+                      <LocationPicker
+                        selectedId={form.watch("locationId") ?? null}
+                        onSelect={(loc) => {
+                          form.setValue("locationId", loc.id, { shouldValidate: true });
+                          form.setValue("storageLocation", loc.name, { shouldValidate: true });
+                          form.setValue("storageAddress", loc.address);
+                        }}
+                      />
                     </FormControl>
+                    <FormDescription>
+                      {field.value ? `Selected: ${field.value}` : "Pick an existing location or add a new one."}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
-              <FormField
-                control={form.control}
-                name="storageAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Storage Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Full address (optional)" {...field} value={field.value ?? ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
+
               <FormField
                 control={form.control}
                 name="condition"
