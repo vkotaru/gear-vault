@@ -7,7 +7,9 @@ import type {
   InsertCheckoutHistory,
   UpdateCheckoutHistory,
   Location,
-  InsertLocation
+  InsertLocation,
+  Spot,
+  InsertSpot
 } from "@shared/schema";
 import session from "express-session";
 import { DatabaseStorage } from "./database-storage";
@@ -35,14 +37,19 @@ export interface IStorage {
   checkoutItem(checkout: InsertCheckoutHistory): Promise<CheckoutHistory>;
   returnItem(itemId: number, returnData: UpdateCheckoutHistory): Promise<CheckoutHistory | undefined>;
 
-  // Location methods
-  getAllLocations(): Promise<Location[]>;
+  // Location methods (scoped to an owner when provided)
+  getAllLocations(owner?: string): Promise<Location[]>;
   getLocation(id: number): Promise<Location | undefined>;
   getLocationWithItemCount(id: number): Promise<(Location & { items: number }) | undefined>;
-  getAllLocationsWithItemCounts(): Promise<(Location & { items: number })[]>;
-  createLocation(location: InsertLocation): Promise<Location>;
+  getAllLocationsWithItemCounts(owner?: string): Promise<(Location & { items: number })[]>;
+  createLocation(location: InsertLocation & { owner?: string }): Promise<Location>;
   updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined>;
   deleteLocation(id: number): Promise<boolean>;
+
+  // Spot methods (sub-locations within a place)
+  getSpotsByLocation(locationId: number): Promise<Spot[]>;
+  createSpot(spot: InsertSpot): Promise<Spot>;
+  deleteSpot(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: session.Store;

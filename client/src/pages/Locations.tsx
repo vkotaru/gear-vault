@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import LocationSpots from "@/components/inventory/LocationSpots";
 import { Map, Plus, Search, Edit, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -241,6 +242,7 @@ export default function Locations() {
                       <span className="font-medium">Note:</span> {location.description}
                     </p>
                   )}
+                  <LocationSpots locationId={location.id} />
                   <div className="flex justify-end space-x-2 mt-4">
                     <Button 
                       variant="outline" 

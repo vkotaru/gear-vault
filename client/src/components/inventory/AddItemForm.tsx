@@ -89,6 +89,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           owner: item.owner,
           isShared: item.isShared,
           locationId: item.locationId ?? null,
+          spotId: item.spotId ?? null,
           storageLocation: item.storageLocation,
           storageAddress: item.storageAddress ?? "",
           condition: item.condition ?? "Good",
@@ -103,6 +104,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           owner: "",
           isShared: true,
           locationId: null,
+          spotId: null,
           storageLocation: "",
           storageAddress: "",
           condition: "Good",
@@ -274,11 +276,17 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                     <FormLabel>Storage Location*</FormLabel>
                     <FormControl>
                       <LocationPicker
-                        selectedId={form.watch("locationId") ?? null}
-                        onSelect={(loc) => {
-                          form.setValue("locationId", loc.id, { shouldValidate: true });
-                          form.setValue("storageLocation", loc.name, { shouldValidate: true });
-                          form.setValue("storageAddress", loc.address);
+                        locationId={form.watch("locationId") ?? null}
+                        spotId={form.watch("spotId") ?? null}
+                        onChange={(sel) => {
+                          form.setValue("locationId", sel.locationId, { shouldValidate: true });
+                          form.setValue("spotId", sel.spotId);
+                          form.setValue(
+                            "storageLocation",
+                            sel.spotName ? `${sel.locationName} — ${sel.spotName}` : sel.locationName,
+                            { shouldValidate: true }
+                          );
+                          form.setValue("storageAddress", sel.address);
                         }}
                       />
                     </FormControl>

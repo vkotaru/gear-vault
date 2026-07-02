@@ -11,7 +11,8 @@ import {
   insertItemSchema, 
   insertCheckoutHistorySchema,
   updateCheckoutHistorySchema,
-  insertLocationSchema
+  insertLocationSchema,
+  insertSpotSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import logger from "./logger";
@@ -390,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/locations", isAuthenticated, async (req, res) => {
     logger.info("GET /api/locations - Fetching all locations with item counts");
     try {
-      const locations = await storage.getAllLocationsWithItemCounts();
+      const locations = await storage.getAllLocationsWithItemCounts(req.user!.username);
       logger.debug(`GET /api/locations - Found ${locations.length} locations`);
       res.json(locations);
     } catch (error) {
@@ -420,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logger.info("POST /api/locations - Creating new location");
     try {
       const validatedLocation = insertLocationSchema.parse(req.body);
-      const location = await storage.createLocation(validatedLocation);
+      const location = await storage.createLocation({ ...validatedLocation, owner: req.user!.username });
       logger.info(`POST /api/locations - Location created successfully with ID ${location.id}`);
       res.status(201).json(location);
     } catch (error) {
@@ -469,6 +470,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logger.error(`DELETE /api/locations/${id} - Error deleting location`, { error, locationId: id });
       res.status(500).json({ message: "Failed to delete location" });
+    }
+  });
+
+  // Spot routes (sub-locations within a place)
+  app.get("/api/locations/:id/spots", isAuthenticated, async (req, res) => {
+    const locationId = parseInt(req.params.id);
+    try {
+      const location = await storage.getLocation(locationId);
+      if (!location || location.owner !== req.user!.username) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      res.json(await storage.getSpotsByLocation(locationId));
+    } catch (error) {
+      logger.error("GET spots - Error", { error, locationId });
+      res.status(500).json({ message: "Failed to fetch spots" });
+    }
+  });
+
+  app.post("/api/locations/:id/spots", isAuthenticated, async (req, res) => {
+    const locationId = parseInt(req.params.id);
+    try {
+      const location = await storage.getLocation(locationId);
+      if (!location || location.owner !== req.user!.username) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      const validated = insertSpotSchema.parse({ ...req.body, locationId });
+      const spot = await storage.createSpot(validated);
+      res.status(201).json(spot);
+    } catch (error) {
+      logger.error("POST spots - Error", { error, locationId });
+      res.status(400).json({ message: "Invalid spot data" });
+    }
+  });
+
+  app.delete("/api/spots/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+      const success = await storage.deleteSpot(id);
+      if (!success) return res.status(404).json({ message: "Spot not found" });
+      res.json({ success });
+    } catch (error) {
+      logger.error("DELETE spot - Error", { error, spotId: id });
+      res.status(500).json({ message: "Failed to delete spot" });
     }
   });
 

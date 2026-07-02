@@ -35,6 +35,15 @@ export const locations = pgTable("locations", {
   name: text("name").notNull(),
   address: text("address").notNull(),
   description: text("description"),
+  owner: text("owner"),  // username of the creator; locations are private per user
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Spot schema — a named sub-location within a place (e.g. "Box 1", "Living Room")
+export const spots = pgTable("spots", {
+  id: serial("id").primaryKey(),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  name: text("name").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -48,6 +57,7 @@ export const items = pgTable("items", {
   owner: text("owner").notNull(),
   isShared: boolean("is_shared").notNull().default(true),
   locationId: integer("location_id").references(() => locations.id),  // Optional field
+  spotId: integer("spot_id").references(() => spots.id),  // Optional sub-location
   storageLocation: text("storage_location").notNull(),
   storageAddress: text("storage_address"),
   condition: text("condition").default("Good"),
@@ -96,6 +106,12 @@ export const updateCheckoutHistorySchema = createInsertSchema(checkoutHistory).p
 export const insertLocationSchema = createInsertSchema(locations).omit({
   id: true,
   createdAt: true,
+  owner: true, // set server-side from the session
+});
+
+export const insertSpotSchema = createInsertSchema(spots).omit({
+  id: true,
+  createdAt: true,
 });
 
 // TypeScript types
@@ -104,6 +120,9 @@ export type User = typeof users.$inferSelect;
 
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
 export type Location = typeof locations.$inferSelect;
+
+export type InsertSpot = z.infer<typeof insertSpotSchema>;
+export type Spot = typeof spots.$inferSelect;
 
 export type InsertItem = z.infer<typeof insertItemSchema>;
 export type Item = typeof items.$inferSelect;

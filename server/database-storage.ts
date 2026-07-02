@@ -1,17 +1,20 @@
-import { 
-  users, 
-  items, 
+import {
+  users,
+  items,
   checkoutHistory,
   locations,
-  type User, 
-  type InsertUser, 
-  type Item, 
-  type InsertItem, 
-  type CheckoutHistory, 
+  spots,
+  type User,
+  type InsertUser,
+  type Item,
+  type InsertItem,
+  type CheckoutHistory,
   type InsertCheckoutHistory,
   type UpdateCheckoutHistory,
   type Location,
-  type InsertLocation
+  type InsertLocation,
+  type Spot,
+  type InsertSpot
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, isNull, desc } from "drizzle-orm";
@@ -257,9 +260,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Location methods
-  async getAllLocations(): Promise<Location[]> {
+  async getAllLocations(owner?: string): Promise<Location[]> {
     try {
-      return await db.select().from(locations).limit(100);
+      const query = db.select().from(locations);
+      const rows = owner
+        ? await query.where(eq(locations.owner, owner)).limit(100)
+        : await query.limit(100);
+      return rows;
     } catch (error) {
       logger.error("Failed to get all locations", { error });
       throw error;
@@ -298,11 +305,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAllLocationsWithItemCounts(): Promise<(Location & { items: number })[]> {
+  async getAllLocationsWithItemCounts(owner?: string): Promise<(Location & { items: number })[]> {
     try {
-      // Get all locations
-      const allLocations = await db.select().from(locations);
-      
+      // Get all locations (optionally scoped to an owner)
+      const allLocations = owner
+        ? await db.select().from(locations).where(eq(locations.owner, owner))
+        : await db.select().from(locations);
+
       // For each location, get the item count
       const locationsWithCounts = await Promise.all(
         allLocations.map(async (location) => {
@@ -321,7 +330,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createLocation(location: InsertLocation): Promise<Location> {
+  async createLocation(location: InsertLocation & { owner?: string }): Promise<Location> {
     try {
       const [newLocation] = await db
         .insert(locations)
@@ -358,7 +367,10 @@ export class DatabaseStorage implements IStorage {
         logger.warn("Cannot delete location with items", { locationId: id, itemCount: itemsAtLocation.length });
         return false;
       }
-      
+
+      // Remove child spots first (they reference this location).
+      await db.delete(spots).where(eq(spots.locationId, id));
+
       const result = await db
         .delete(locations)
         .where(eq(locations.id, id))
@@ -366,6 +378,38 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       logger.error("Failed to delete location", { error, locationId: id });
+      throw error;
+    }
+  }
+
+  // Spot methods
+  async getSpotsByLocation(locationId: number): Promise<Spot[]> {
+    try {
+      return await db.select().from(spots).where(eq(spots.locationId, locationId));
+    } catch (error) {
+      logger.error("Failed to get spots for location", { error, locationId });
+      throw error;
+    }
+  }
+
+  async createSpot(spot: InsertSpot): Promise<Spot> {
+    try {
+      const [newSpot] = await db.insert(spots).values(spot).returning();
+      return newSpot;
+    } catch (error) {
+      logger.error("Failed to create spot", { error, spotName: spot.name });
+      throw error;
+    }
+  }
+
+  async deleteSpot(id: number): Promise<boolean> {
+    try {
+      // Detach any items pointing at this spot, then delete it.
+      await db.update(items).set({ spotId: null }).where(eq(items.spotId, id));
+      const result = await db.delete(spots).where(eq(spots.id, id)).returning({ id: spots.id });
+      return result.length > 0;
+    } catch (error) {
+      logger.error("Failed to delete spot", { error, spotId: id });
       throw error;
     }
   }

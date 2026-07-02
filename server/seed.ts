@@ -95,7 +95,7 @@ export async function seedDevData() {
   // Create locations
   const createdLocations = [];
   for (const loc of LOCATIONS_DATA) {
-    const location = await storage.createLocation(loc);
+    const location = await storage.createLocation({ ...loc, owner: "dev" });
     createdLocations.push(location);
   }
   logger.info(`Created ${createdLocations.length} locations`);
