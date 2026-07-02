@@ -31,12 +31,20 @@ export default function Settings() {
   const { settings, updateSettings, resetSettings } = useThemeSettings();
   const [location, setLocation] = useLocation();
 
-  // Real system stats for the System tab.
-  const { data: stats } = useQuery<{ total: number; available: number; checkedOut: number }>({
+  // Real system stats for the System tab. The stats query is also our live
+  // database probe — if it succeeds the DB is reachable.
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+  } = useQuery<{ total: number; available: number; checkedOut: number }>({
     queryKey: ["/api/stats"],
   });
   const { data: locations } = useQuery<Array<{ id: number }>>({
     queryKey: ["/api/locations"],
+  });
+  const { data: health } = useQuery<{ status: string; version: string }>({
+    queryKey: ["/api/health"],
   });
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const tabFromUrl = searchParams.get("tab");
@@ -473,7 +481,7 @@ export default function Settings() {
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Application Version</span>
-                    <span className="text-muted-foreground">1.0.0</span>
+                    <span className="text-muted-foreground">{health?.version ?? "…"}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Total Items</span>
@@ -485,7 +493,13 @@ export default function Settings() {
                   </div>
                   <div className="flex justify-between py-2">
                     <span className="font-medium">Database Status</span>
-                    <span className="text-primary font-medium">Connected</span>
+                    {statsLoading ? (
+                      <span className="text-muted-foreground">Checking…</span>
+                    ) : statsError ? (
+                      <span className="text-destructive font-medium">Disconnected</span>
+                    ) : (
+                      <span className="text-primary font-medium">Connected</span>
+                    )}
                   </div>
                 </div>
               </CardContent>

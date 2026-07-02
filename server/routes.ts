@@ -30,10 +30,21 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
+// Application version, read from package.json at startup (bundled server runs
+// from /app where package.json is present).
+let appVersion = "unknown";
+try {
+  appVersion = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "package.json"), "utf-8")
+  ).version || "unknown";
+} catch (error) {
+  logger.warn("Could not read app version from package.json", { error });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check (unauthenticated) — used by platform healthchecks (Railway).
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: "ok", version: appVersion });
   });
 
   // Setup authentication
