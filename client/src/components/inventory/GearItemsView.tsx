@@ -51,7 +51,7 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
             className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/40"
             onClick={() => go(item)}
           >
-            <Thumb item={item} className="h-12 w-12 rounded object-cover shrink-0" />
+            <Thumb item={item} className="h-12 w-12 rounded object-contain bg-muted shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="font-medium truncate">{item.name}</p>
               <p className="text-xs text-muted-foreground truncate">
@@ -81,8 +81,8 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
             className="h-full cursor-pointer hover:border-primary transition-colors overflow-hidden"
             onClick={() => go(item)}
           >
-            <div className="aspect-square relative overflow-hidden">
-              <Thumb item={item} className="w-full h-full object-cover" />
+            <div className="aspect-square relative overflow-hidden bg-muted">
+              <Thumb item={item} className="w-full h-full object-contain" />
               <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusBadgeClass(item.status)}`}>
                 {statusLabel(item.status)}
               </span>
@@ -106,8 +106,8 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
           className="h-full cursor-pointer hover:border-primary transition-colors"
           onClick={() => go(item)}
         >
-          <div className="aspect-square relative overflow-hidden rounded-t-lg">
-            <Thumb item={item} className="w-full h-full object-cover" />
+          <div className="aspect-square relative overflow-hidden rounded-t-lg bg-muted">
+            <Thumb item={item} className="w-full h-full object-contain" />
             <div className="absolute top-2 right-2">
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(item.status)}`}>
                 {statusLabel(item.status)}

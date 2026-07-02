@@ -177,7 +177,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                   <img
                     src={selectedImage}
                     alt={item.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -199,7 +199,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                       <img
                         src={imageUrl}
                         alt={`${item.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   ))
