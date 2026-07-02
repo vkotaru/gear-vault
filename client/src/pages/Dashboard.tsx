@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import type { Item } from "@shared/schema";
 import {
   BarChart,
   Bar,
@@ -14,7 +16,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Loader2, Package, UsersRound, Share2, Calendar } from "lucide-react";
+import { Loader2, Package, Share2, Calendar } from "lucide-react";
 
 interface StatsResponse {
   total: number;
@@ -22,12 +24,28 @@ interface StatsResponse {
   checkedOut: number;
 }
 
+// Category keys (from the schema enum) mapped to display labels.
+const CATEGORY_LABELS: Record<string, string> = {
+  camping: "Camping",
+  hiking: "Hiking",
+  biking: "Biking",
+  water: "Water",
+  winter: "Winter",
+  other: "Other",
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const { data: stats, isLoading } = useQuery<StatsResponse>({
+  const { data: stats, isLoading: statsLoading } = useQuery<StatsResponse>({
     queryKey: ['/api/stats'],
   });
+
+  const { data: items = [], isLoading: itemsLoading } = useQuery<Item[]>({
+    queryKey: ['/api/items'],
+  });
+
+  const isLoading = statsLoading || itemsLoading;
 
   const chartData = [
     { name: 'Available', value: stats?.available || 0 },
@@ -40,13 +58,19 @@ export default function Dashboard() {
   const secondaryColor = root ? `hsl(${root.getPropertyValue("--secondary").trim()})` : "hsl(25 70% 45%)";
   const COLORS = [primaryColor, secondaryColor];
 
-  const categoryData = [
-    { name: 'Camping', value: 5 },
-    { name: 'Hiking', value: 3 },
-    { name: 'Biking', value: 2 },
-    { name: 'Water', value: 1 },
-    { name: 'Winter', value: 1 },
-  ];
+  // Real counts per category, derived from the inventory.
+  const categoryData = Object.entries(CATEGORY_LABELS).map(([key, name]) => ({
+    name,
+    value: items.filter((item) => item.category === key).length,
+  }));
+
+  const sharedCount = items.filter((item) => item.isShared).length;
+
+  // Most recently added items (the schema has no activity log, so we surface
+  // additions ordered by addedOn).
+  const recentItems = [...items]
+    .sort((a, b) => new Date(b.addedOn).getTime() - new Date(a.addedOn).getTime())
+    .slice(0, 5);
 
   return (
     <Layout>
@@ -107,7 +131,7 @@ export default function Dashboard() {
                   <Share2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">2</div>
+                  <div className="text-2xl font-bold">{sharedCount}</div>
                   <p className="text-xs text-muted-foreground">
                     Items shared with others
                   </p>
@@ -170,7 +194,7 @@ export default function Dashboard() {
                       >
                         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                         <XAxis dataKey="name" className="text-muted-foreground" />
-                        <YAxis className="text-muted-foreground" />
+                        <YAxis className="text-muted-foreground" allowDecimals={false} />
                         <Tooltip />
                         <Bar dataKey="value" fill={primaryColor} />
                       </BarChart>
@@ -180,44 +204,36 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Recent activity */}
+            {/* Recently added */}
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>Recently Added</CardTitle>
                 <CardDescription>
-                  Latest updates to your inventory
+                  Latest additions to your inventory
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                      <Package className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Tent was added to inventory</p>
-                      <p className="text-xs text-muted-foreground">Today at 2:30 PM</p>
-                    </div>
+                {recentItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No items yet. Add your first piece of gear to get started.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {recentItems.map((item) => (
+                      <div key={item.id} className="flex items-center">
+                        <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                          <Package className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{item.name} was added to inventory</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(item.addedOn), "PPp")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center">
-                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                      <Calendar className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Sleeping bag was checked out</p>
-                      <p className="text-xs text-muted-foreground">Yesterday at 10:15 AM</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                      <Share2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Hiking boots were shared</p>
-                      <p className="text-xs text-muted-foreground">Feb 25, 2023</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </>
