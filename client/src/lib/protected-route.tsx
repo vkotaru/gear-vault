@@ -24,12 +24,7 @@ export function ProtectedRoute({
   if (!user) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">Not authenticated</h2>
-            <p className="text-muted-foreground">Please check your server configuration.</p>
-          </div>
-        </div>
+        <Redirect to="/auth" />
       </Route>
     );
   }

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { useThemeSettings } from "@/hooks/use-theme-settings";
 import NotFound from "@/pages/not-found";
+import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/Dashboard";
 import AllGear from "@/pages/AllGear";
 import MyGear from "@/pages/MyGear";
@@ -17,6 +18,7 @@ import Settings from "@/pages/Settings";
 function Router() {
   return (
     <Switch>
+      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/all-gear" component={AllGear} />
       <ProtectedRoute path="/my-gear" component={MyGear} />
