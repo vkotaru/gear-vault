@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import AdmZip from "adm-zip";
+import { randomBytes } from "crypto";
 import { 
   insertUserSchema, 
   insertItemSchema, 
@@ -28,6 +30,12 @@ if (!fs.existsSync(uploadsDir)) {
 const upload = multer({
   dest: uploadsDir,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// Bulk-import archive upload (kept in memory so we can unzip it).
+const archiveUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
 });
 
 // Application version, read from package.json at startup (bundled server runs
@@ -168,6 +176,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logger.error("POST /api/items - Error creating item", { error });
       res.status(400).json({ message: "Invalid item data", error });
+    }
+  });
+
+  // Bulk import: a .zip containing gear.json (array of items) and referenced
+  // photo files. Each item's photos are extracted to the uploads dir.
+  app.post("/api/items/import", isAuthenticated, archiveUpload.single("archive"), async (req, res) => {
+    logger.info("POST /api/items/import - Importing gear archive");
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No archive uploaded" });
+      }
+
+      let zip: AdmZip;
+      try {
+        zip = new AdmZip(req.file.buffer);
+      } catch {
+        return res.status(400).json({ message: "Uploaded file is not a valid zip archive" });
+      }
+
+      const entries = zip.getEntries();
+      const jsonEntry = entries.find(
+        (e) => !e.isDirectory && path.basename(e.entryName) === "gear.json"
+      );
+      if (!jsonEntry) {
+        return res.status(400).json({ message: "gear.json not found in the archive" });
+      }
+
+      let items: any[];
+      try {
+        items = JSON.parse(zip.readAsText(jsonEntry));
+      } catch {
+        return res.status(400).json({ message: "gear.json is not valid JSON" });
+      }
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ message: "gear.json must be an array of items" });
+      }
+
+      const username = req.user!.username;
+      const results = {
+        imported: 0,
+        failed: 0,
+        errors: [] as { item: string; error: string }[],
+      };
+
+      for (let i = 0; i < items.length; i++) {
+        const raw = items[i];
+        const label = raw?.name || `item #${i + 1}`;
+        try {
+          // Resolve each referenced photo within the archive and persist it.
+          const imageRefs: string[] = Array.isArray(raw?.images) ? raw.images : [];
+          const imageUrls: string[] = [];
+          for (const ref of imageRefs) {
+            const entry = entries.find(
+              (e) =>
+                !e.isDirectory &&
+                (e.entryName === ref ||
+                  e.entryName.endsWith(`/${ref}`) ||
+                  path.basename(e.entryName) === path.basename(ref))
+            );
+            if (!entry) throw new Error(`image not found in archive: ${ref}`);
+            const ext = path.extname(entry.entryName) || "";
+            const filename = `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
+            await fs.promises.writeFile(path.join(uploadsDir, filename), entry.getData());
+            imageUrls.push(`/api/uploads/${filename}`);
+          }
+
+          const { images, imageUrls: _ignored, ...fields } = raw;
+          const validatedItem = insertItemSchema.parse({
+            owner: username,
+            storageLocation: "Unsorted",
+            isShared: true,
+            condition: "Good",
+            status: "available",
+            ...fields,
+            imageUrls,
+          });
+          const created = await storage.createItem(validatedItem);
+          results.imported++;
+          logger.info(`POST /api/items/import - Imported "${created.name}" (id ${created.id})`);
+        } catch (err: any) {
+          results.failed++;
+          results.errors.push({ item: label, error: err?.message || String(err) });
+          logger.warn(`POST /api/items/import - Failed to import ${label}`, { error: err });
+        }
+      }
+
+      logger.info(`POST /api/items/import - Done: ${results.imported} imported, ${results.failed} failed`);
+      res.json(results);
+    } catch (error) {
+      logger.error("POST /api/items/import - Error importing archive", { error });
+      res.status(500).json({ message: "Failed to import archive" });
     }
   });
 

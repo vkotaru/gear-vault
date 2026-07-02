@@ -8,6 +8,7 @@ import {
   Calendar,
   Settings,
   Map,
+  Upload,
   LogOut,
   Menu,
   X
@@ -34,6 +35,7 @@ export default function Sidebar() {
     { name: "Shared Gear", href: "/shared-gear", icon: Share2 },
     { name: "Checked Out", href: "/checked-out", icon: Calendar },
     { name: "Storage Locations", href: "/locations", icon: Map },
+    { name: "Import", href: "/import", icon: Upload },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
   
