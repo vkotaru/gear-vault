@@ -26,9 +26,16 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure uploads
+// Configure uploads. Preserve the file extension so the static server sends a
+// correct Content-Type (e.g. image/jpeg) rather than application/octet-stream.
 const upload = multer({
-  dest: uploadsDir,
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname) || "";
+      cb(null, `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`);
+    },
+  }),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
