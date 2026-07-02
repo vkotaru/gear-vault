@@ -24,10 +24,7 @@ ENV NODE_ENV=production
 # the other build tools are not needed at runtime (the Vite code path is a
 # lazily-imported, code-split chunk that production never loads).
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && \
-    # drizzle-kit (a dev tool) is needed only to push the schema on startup.
-    npm install --no-save drizzle-kit@0.30.4 && \
-    npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
