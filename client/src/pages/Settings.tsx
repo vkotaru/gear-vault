@@ -37,8 +37,8 @@ export default function Settings() {
 
   const [profileForm, setProfileForm] = useState({
     username: user?.username || "",
-    email: "user@example.com",
-    fullName: "",
+    email: user?.email || "",
+    fullName: user?.displayName || "",
   });
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
