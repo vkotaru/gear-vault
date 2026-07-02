@@ -49,13 +49,21 @@ export function setupAuth(app: Express) {
     throw new Error("SESSION_SECRET environment variable is required in production");
   }
 
+  // Secure cookies require HTTPS. Default to secure in production, but allow
+  // COOKIE_SECURE=false for HTTP-only deployments (e.g. self-hosted over a
+  // private network / Tailscale) where the session cookie would otherwise
+  // never be sent and logins would silently fail.
+  const cookieSecure = process.env.COOKIE_SECURE !== undefined
+    ? process.env.COOKIE_SECURE === "true"
+    : process.env.NODE_ENV === "production";
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "gearshare-dev-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: cookieSecure,
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },

@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+uploads
+*.tar.gz
+.DS_Store
+npm-debug.log
+attached_assets
+generated-icon.png
+run-tests.sh
+test-coverage.sh
