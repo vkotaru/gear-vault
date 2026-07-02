@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useThemeSettings, COLOR_THEMES, FONT_OPTIONS } from "@/hooks/use-theme-settings";
 import { useLocation } from "wouter";
 import {
@@ -40,6 +41,14 @@ export default function Settings() {
     email: user?.email || "",
     fullName: user?.displayName || "",
   });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileForm({
@@ -48,20 +57,68 @@ export default function Settings() {
     });
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Profile updated",
-      description: "Your profile changes have been saved.",
+  const handlePasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordForm({
+      ...passwordForm,
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Password updated",
-      description: "Your password has been successfully changed.",
-    });
+    setSavingProfile(true);
+    try {
+      await apiRequest("PATCH", "/api/user", {
+        username: profileForm.username,
+        email: profileForm.email,
+        displayName: profileForm.fullName,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Profile updated",
+        description: "Your profile changes have been saved.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Update failed",
+        description: (err?.message || "Could not update profile").replace(/^\d+:\s*/, ""),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "The new password and confirmation must match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await apiRequest("POST", "/api/user/password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully changed.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Update failed",
+        description: (err?.message || "Could not change password").replace(/^\d+:\s*/, ""),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const handleReset = () => {
@@ -319,9 +376,9 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="flex gap-1">
+                  <Button type="submit" className="flex gap-1" disabled={savingProfile}>
                     <Save className="h-4 w-4" />
-                    Save Changes
+                    {savingProfile ? "Saving..." : "Save Changes"}
                   </Button>
                 </form>
               </CardContent>
@@ -341,17 +398,37 @@ export default function Settings() {
                 <form onSubmit={handlePasswordChange} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input id="currentPassword" type="password" />
+                    <Input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordFieldChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
-                    <Input id="newPassword" type="password" />
+                    <Input
+                      id="newPassword"
+                      name="newPassword"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordFieldChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input id="confirmPassword" type="password" />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordFieldChange}
+                    />
                   </div>
-                  <Button type="submit">Update Password</Button>
+                  <Button type="submit" disabled={savingPassword}>
+                    {savingPassword ? "Updating..." : "Update Password"}
+                  </Button>
                 </form>
               </CardContent>
             </Card>

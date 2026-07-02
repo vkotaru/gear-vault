@@ -8,6 +8,18 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import logger from "./logger";
+import { z } from "zod";
+
+const updateProfileSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").optional(),
+  email: z.union([z.string().email(), z.literal("")]).optional(),
+  displayName: z.string().optional(),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6),
+});
 
 declare global {
   namespace Express {
@@ -236,5 +248,65 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const { password, ...user } = req.user!;
     res.json(user);
+  });
+
+  // Update the current user's profile (username / email / display name).
+  app.patch("/api/user", async (req, res, next) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).send("Invalid profile data");
+    }
+    const { username, email, displayName } = parsed.data;
+
+    try {
+      // Enforce username uniqueness if it changed.
+      if (username && username !== req.user!.username) {
+        const existing = await storage.getUserByUsername(username);
+        if (existing && existing.id !== req.user!.id) {
+          return res.status(400).send("Username already taken");
+        }
+      }
+
+      const updated = await storage.updateUser(req.user!.id, {
+        ...(username !== undefined ? { username } : {}),
+        ...(email !== undefined ? { email: email || null } : {}),
+        ...(displayName !== undefined ? { displayName: displayName || null } : {}),
+      });
+      if (!updated) return res.status(404).send("User not found");
+
+      const { password, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch (error) {
+      logger.error("Failed to update profile", { error, userId: req.user!.id });
+      next(error);
+    }
+  });
+
+  // Change the current user's password (verifying the current one).
+  app.post("/api/user/password", async (req, res, next) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).send("New password must be at least 6 characters");
+    }
+    const { currentPassword, newPassword } = parsed.data;
+
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (!user) return res.status(404).send("User not found");
+
+      if (!(await comparePasswords(currentPassword, user.password))) {
+        return res.status(400).send("Current password is incorrect");
+      }
+
+      await storage.updateUser(user.id, { password: await hashPassword(newPassword) });
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("Failed to change password", { error, userId: req.user!.id });
+      next(error);
+    }
   });
 }
