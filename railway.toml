@@ -1,9 +1,12 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+# --include=dev ensures build tools (vite, esbuild, drizzle-kit) install even
+# if NODE_ENV=production is set as a service variable.
+# db:push creates/updates the schema on the Railway database.
+buildCommand = "npm install --include=dev && npm run build && npm run db:push"
 
 [deploy]
 startCommand = "npm start"
-healthcheckPath = "/api/user"
+healthcheckPath = "/api/health"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

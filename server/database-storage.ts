@@ -97,7 +97,7 @@ export class DatabaseStorage implements IStorage {
   // Item methods
   async getAllItems(): Promise<Item[]> {
     try {
-      // Add a limit to fetch only the first 100 items and apply caching for better performance
+      // Cap the result set to avoid unbounded reads
       return await db.select().from(items).limit(100);
     } catch (error) {
       logger.error("Failed to get all items", { error });

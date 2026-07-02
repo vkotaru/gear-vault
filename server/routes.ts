@@ -14,21 +14,31 @@ import {
 import { setupAuth } from "./auth";
 import logger from "./logger";
 
+// Directory where uploaded images are stored. Configurable via UPLOADS_DIR so
+// it can point at a persistent volume in production (e.g. a Railway Volume
+// mounted at /data/uploads); local dev falls back to ./uploads.
+const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads");
+
+// Create uploads directory if it doesn't exist (recursive for nested mount paths)
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Configure uploads
-const upload = multer({ 
-  dest: path.join(process.cwd(), "uploads"),
+const upload = multer({
+  dest: uploadsDir,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(path.join(process.cwd(), "uploads"))) {
-  fs.mkdirSync(path.join(process.cwd(), "uploads"));
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check (unauthenticated) — used by platform healthchecks (Railway).
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
+
   // Setup authentication
   setupAuth(app);
-  
+
   // Serve static files from uploads directory
   app.use("/api/uploads", (req, res, next) => {
     // Check if user is authenticated
@@ -36,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();
-  }, express.static(path.join(process.cwd(), "uploads")));
+  }, express.static(uploadsDir));
 
   // Authentication middleware
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
