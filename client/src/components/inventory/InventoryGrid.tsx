@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Item } from "@shared/schema";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { TentTree, Mountain, Bike, Droplets, CloudSnow, Package } from "lucide-react";
+import { Search, Package } from "lucide-react";
+import { CATEGORIES } from "@/lib/categories";
 
 interface InventoryGridProps {
   queryKey: string;
@@ -39,15 +39,6 @@ export default function InventoryGrid({
 
     return matchesCategory && matchesSearch;
   });
-
-  const categoryButtons = [
-    { id: "camping", label: "Camping", icon: <TentTree className="h-4 w-4 mr-1" /> },
-    { id: "hiking", label: "Hiking", icon: <Mountain className="h-4 w-4 mr-1" /> },
-    { id: "biking", label: "Biking", icon: <Bike className="h-4 w-4 mr-1" /> },
-    { id: "water", label: "Water", icon: <Droplets className="h-4 w-4 mr-1" /> },
-    { id: "winter", label: "Winter", icon: <CloudSnow className="h-4 w-4 mr-1" /> },
-    { id: "other", label: "Other", icon: <Package className="h-4 w-4 mr-1" /> },
-  ];
 
   const handleCategoryClick = (category: string) => {
     if (activeCategory === category) {
@@ -111,15 +102,15 @@ export default function InventoryGrid({
           All Categories
         </Button>
 
-        {categoryButtons.map((category) => (
+        {CATEGORIES.map(({ value, label, icon: Icon }) => (
           <Button
-            key={category.id}
+            key={value}
             variant="outline"
             size="sm"
-            className={activeCategory === category.id ? "bg-primary/10 text-primary border-primary" : ""}
-            onClick={() => handleCategoryClick(category.id)}
+            className={activeCategory === value ? "bg-primary/10 text-primary border-primary" : ""}
+            onClick={() => handleCategoryClick(value)}
           >
-            {category.icon} {category.label}
+            <Icon className="h-4 w-4 mr-1" /> {label}
           </Button>
         ))}
       </div>

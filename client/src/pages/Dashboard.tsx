@@ -4,6 +4,7 @@ import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import type { Item } from "@shared/schema";
+import { CATEGORIES } from "@/lib/categories";
 import {
   BarChart,
   Bar,
@@ -23,16 +24,6 @@ interface StatsResponse {
   available: number;
   checkedOut: number;
 }
-
-// Category keys (from the schema enum) mapped to display labels.
-const CATEGORY_LABELS: Record<string, string> = {
-  camping: "Camping",
-  hiking: "Hiking",
-  biking: "Biking",
-  water: "Water",
-  winter: "Winter",
-  other: "Other",
-};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -59,9 +50,9 @@ export default function Dashboard() {
   const COLORS = [primaryColor, secondaryColor];
 
   // Real counts per category, derived from the inventory.
-  const categoryData = Object.entries(CATEGORY_LABELS).map(([key, name]) => ({
-    name,
-    value: items.filter((item) => item.category === key).length,
+  const categoryData = CATEGORIES.map(({ value, label }) => ({
+    name: label,
+    value: items.filter((item) => item.category === value).length,
   }));
 
   const sharedCount = items.filter((item) => item.isShared).length;

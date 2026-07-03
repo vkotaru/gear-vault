@@ -9,6 +9,9 @@ export const categoryEnum = pgEnum("category", [
   "biking",
   "water",
   "winter",
+  "clothing",
+  "electronics",
+  "utilities",
   "other"
 ]);
 

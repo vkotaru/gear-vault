@@ -16,8 +16,12 @@ import { Pool } from "pg";
  */
 const SQL = `
 DO $$ BEGIN
-  CREATE TYPE category AS ENUM ('camping','hiking','biking','water','winter','other');
+  CREATE TYPE category AS ENUM ('camping','hiking','biking','water','winter','clothing','electronics','utilities','other');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+-- Add newer categories to databases created before they existed.
+ALTER TYPE category ADD VALUE IF NOT EXISTS 'clothing';
+ALTER TYPE category ADD VALUE IF NOT EXISTS 'electronics';
+ALTER TYPE category ADD VALUE IF NOT EXISTS 'utilities';
 
 DO $$ BEGIN
   CREATE TYPE status AS ENUM ('available','checked_out');

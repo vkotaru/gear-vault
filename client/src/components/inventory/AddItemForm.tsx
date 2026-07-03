@@ -35,13 +35,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertItemSchema, type Item } from "@shared/schema";
 import LocationPicker from "@/components/inventory/LocationPicker";
+import { CATEGORIES } from "@/lib/categories";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { X, Plus, Upload, Image } from "lucide-react";
 
 // Extend the schema for the form with some validation
 const formSchema = insertItemSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  category: z.enum(["camping", "hiking", "biking", "water", "winter", "other"]),
+  category: z.enum(["camping", "hiking", "biking", "water", "winter", "clothing", "electronics", "utilities", "other"]),
   owner: z.string().min(1, "Owner is required"),
   storageLocation: z.string().min(1, "Storage location is required"),
 });
@@ -227,12 +228,9 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="camping">Camping</SelectItem>
-                        <SelectItem value="hiking">Hiking</SelectItem>
-                        <SelectItem value="biking">Biking</SelectItem>
-                        <SelectItem value="water">Water Sports</SelectItem>
-                        <SelectItem value="winter">Winter</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
