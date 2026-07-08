@@ -36,6 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { insertItemSchema, type Item } from "@shared/schema";
 import LocationPicker from "@/components/inventory/LocationPicker";
 import { CATEGORIES } from "@/lib/categories";
+import { STATUSES } from "@/lib/status";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { X, Plus, Upload, Image } from "lucide-react";
 
@@ -96,6 +97,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           condition: item.condition ?? "Good",
           imageUrls: item.imageUrls ?? [],
           status: item.status,
+          lentTo: item.lentTo ?? "",
         }
       : {
           name: "",
@@ -110,7 +112,8 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           storageAddress: "",
           condition: "Good",
           imageUrls: [],
-          status: "available",
+          status: "stored",
+          lentTo: "",
         },
   });
 
@@ -321,6 +324,44 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? "stored"}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {STATUSES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("status") === "lent" && (
+                <FormField
+                  control={form.control}
+                  name="lentTo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lent to</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Who has it?" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
             
             <FormField

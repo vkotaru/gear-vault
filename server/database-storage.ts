@@ -138,7 +138,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCheckedOutItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.status, "checked_out")).limit(50);
+      return await db.select().from(items).where(eq(items.status, "lent")).limit(50);
     } catch (error) {
       logger.error("Failed to get checked out items", { error });
       throw error;
@@ -210,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       // Update item status
       await db
         .update(items)
-        .set({ status: "checked_out" })
+        .set({ status: "lent" })
         .where(eq(items.id, checkout.itemId));
       
       return checkoutRecord;
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
       // Update the item status
       await db
         .update(items)
-        .set({ status: "available" })
+        .set({ status: "stored" })
         .where(eq(items.id, itemId));
       
       return updatedCheckout;

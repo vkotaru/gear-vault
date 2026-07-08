@@ -21,8 +21,10 @@ import { Loader2, Package, Share2, Calendar } from "lucide-react";
 
 interface StatsResponse {
   total: number;
-  available: number;
-  checkedOut: number;
+  stored: number;
+  inUse: number;
+  lent: number;
+  unknown: number;
 }
 
 export default function Dashboard() {
@@ -39,23 +41,25 @@ export default function Dashboard() {
   const isLoading = statsLoading || itemsLoading;
 
   const chartData = [
-    { name: 'Available', value: stats?.available || 0 },
-    { name: 'Checked Out', value: stats?.checkedOut || 0 },
-  ];
+    { name: 'Stored', value: stats?.stored || 0 },
+    { name: 'In use', value: stats?.inUse || 0 },
+    { name: 'Lent out', value: stats?.lent || 0 },
+    { name: 'Unknown', value: stats?.unknown || 0 },
+  ].filter((d) => d.value > 0);
 
   // Use CSS variable colors for charts
   const root = typeof document !== "undefined" ? getComputedStyle(document.documentElement) : null;
   const primaryColor = root ? `hsl(${root.getPropertyValue("--primary").trim()})` : "hsl(150 45% 30%)";
   const secondaryColor = root ? `hsl(${root.getPropertyValue("--secondary").trim()})` : "hsl(25 70% 45%)";
-  const COLORS = [primaryColor, secondaryColor];
+  const mutedColor = root ? `hsl(${root.getPropertyValue("--muted-foreground").trim()})` : "hsl(215 16% 47%)";
+  const destructiveColor = root ? `hsl(${root.getPropertyValue("--destructive").trim()})` : "hsl(0 72% 51%)";
+  const COLORS = [mutedColor, primaryColor, secondaryColor, destructiveColor];
 
   // Real counts per category, derived from the inventory.
   const categoryData = CATEGORIES.map(({ value, label }) => ({
     name: label,
     value: items.filter((item) => item.category === value).length,
   }));
-
-  const sharedCount = items.filter((item) => item.isShared).length;
 
   // Most recently added items (the schema has no activity log, so we surface
   // additions ordered by addedOn).
@@ -92,39 +96,39 @@ export default function Dashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Available</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.available || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Items ready to use
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Checked Out</CardTitle>
+                  <CardTitle className="text-sm font-medium">In use</CardTitle>
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.checkedOut || 0}</div>
+                  <div className="text-2xl font-bold">{stats?.inUse || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    Items currently in use
+                    Out on a trip or in use
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Shared Items</CardTitle>
+                  <CardTitle className="text-sm font-medium">Lent out</CardTitle>
                   <Share2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{sharedCount}</div>
+                  <div className="text-2xl font-bold">{stats?.lent || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    Items shared with others
+                    Borrowed by someone
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Unknown</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.unknown || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Whereabouts unclear
                   </p>
                 </CardContent>
               </Card>
@@ -136,7 +140,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle>Inventory Status</CardTitle>
                   <CardDescription>
-                    Available vs. checked out items
+                    Breakdown by item status
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

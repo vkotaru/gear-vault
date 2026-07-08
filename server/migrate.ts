@@ -14,19 +14,30 @@ import { Pool } from "pg";
  * The session table (user_sessions) is created by connect-pg-simple at runtime,
  * so it is intentionally not managed here.
  */
-const SQL = `
+// Phase 1: enum types and values. Kept separate so newly-added enum values are
+// committed before the schema phase uses them (Postgres forbids using a value
+// added by ALTER TYPE ADD VALUE within the same transaction).
+const ENUM_SQL = `
 DO $$ BEGIN
   CREATE TYPE category AS ENUM ('camping','hiking','biking','water','winter','clothing','electronics','utilities','other');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
--- Add newer categories to databases created before they existed.
 ALTER TYPE category ADD VALUE IF NOT EXISTS 'clothing';
 ALTER TYPE category ADD VALUE IF NOT EXISTS 'electronics';
 ALTER TYPE category ADD VALUE IF NOT EXISTS 'utilities';
 
 DO $$ BEGIN
-  CREATE TYPE status AS ENUM ('available','checked_out');
+  CREATE TYPE status AS ENUM ('stored','in_use','unknown','lent');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+-- Add the current status values to databases created with the old set
+-- ('available','checked_out').
+ALTER TYPE status ADD VALUE IF NOT EXISTS 'stored';
+ALTER TYPE status ADD VALUE IF NOT EXISTS 'in_use';
+ALTER TYPE status ADD VALUE IF NOT EXISTS 'unknown';
+ALTER TYPE status ADD VALUE IF NOT EXISTS 'lent';
+`;
 
+// Phase 2: tables, columns and data migrations (may use enum values from phase 1).
+const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id serial PRIMARY KEY,
   username text NOT NULL UNIQUE,
@@ -68,10 +79,16 @@ CREATE TABLE IF NOT EXISTS items (
   storage_address text,
   condition text DEFAULT 'Good',
   image_urls text[],
-  status status NOT NULL DEFAULT 'available',
+  status status NOT NULL DEFAULT 'stored',
+  lent_to text,
   added_on timestamp NOT NULL DEFAULT now()
 );
 ALTER TABLE items ADD COLUMN IF NOT EXISTS spot_id integer REFERENCES spots(id);
+ALTER TABLE items ADD COLUMN IF NOT EXISTS lent_to text;
+-- Migrate legacy statuses to the current set.
+UPDATE items SET status = 'stored' WHERE status = 'available';
+UPDATE items SET status = 'lent' WHERE status = 'checked_out';
+ALTER TABLE items ALTER COLUMN status SET DEFAULT 'stored';
 
 CREATE TABLE IF NOT EXISTS checkout_history (
   id serial PRIMARY KEY,
@@ -99,7 +116,9 @@ async function main() {
 
   const pool = new Pool({ connectionString });
   try {
-    await pool.query(SQL);
+    // Separate queries so phase-1 enum additions commit before phase 2 uses them.
+    await pool.query(ENUM_SQL);
+    await pool.query(SCHEMA_SQL);
     console.log("Schema is up to date.");
   } finally {
     await pool.end();

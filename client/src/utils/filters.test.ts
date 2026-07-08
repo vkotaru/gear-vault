@@ -79,17 +79,17 @@ describe('Item Filtering', () => {
     });
 
     it('filters items by available status', () => {
-      const result = filterItemsByStatus(mockItems, 'available');
-      const availableCount = mockItems.filter(item => item.status === 'available').length;
+      const result = filterItemsByStatus(mockItems, 'stored');
+      const availableCount = mockItems.filter(item => item.status === 'stored').length;
       expect(result).toHaveLength(availableCount);
-      expect(result.every(item => item.status === 'available')).toBe(true);
+      expect(result.every(item => item.status === 'stored')).toBe(true);
     });
 
     it('filters items by checked_out status', () => {
-      const result = filterItemsByStatus(mockItems, 'checked_out');
-      const checkedOutCount = mockItems.filter(item => item.status === 'checked_out').length;
+      const result = filterItemsByStatus(mockItems, 'lent');
+      const checkedOutCount = mockItems.filter(item => item.status === 'lent').length;
       expect(result).toHaveLength(checkedOutCount);
-      expect(result.every(item => item.status === 'checked_out')).toBe(true);
+      expect(result.every(item => item.status === 'lent')).toBe(true);
     });
   });
 
@@ -98,7 +98,7 @@ describe('Item Filtering', () => {
       // Apply filters in sequence
       let result = filterItemsBySearchTerm(mockItems, 'bike');
       result = filterItemsByCategory(result, 'biking');
-      result = filterItemsByStatus(result, 'checked_out');
+      result = filterItemsByStatus(result, 'lent');
       
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Mountain Bike');

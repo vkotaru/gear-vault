@@ -11,11 +11,12 @@ export const mockItems: Item[] = [
     owner: 'testuser',
     locationId: 1,
     spotId: null,
+    lentTo: null,
     storageLocation: 'Garage',
     storageAddress: '123 Home St',
     condition: 'Good',
     isShared: true,
-    status: 'available',
+    status: 'stored',
     imageUrls: ['/api/uploads/tent.jpg'],
     addedOn: new Date()
   },
@@ -28,11 +29,12 @@ export const mockItems: Item[] = [
     owner: 'testuser',
     locationId: 1,
     spotId: null,
+    lentTo: null,
     storageLocation: 'Closet',
     storageAddress: '123 Home St',
     condition: 'Excellent',
     isShared: false,
-    status: 'available',
+    status: 'stored',
     imageUrls: ['/api/uploads/boots.jpg'],
     addedOn: new Date()
   },
@@ -45,11 +47,12 @@ export const mockItems: Item[] = [
     owner: 'testuser',
     locationId: 2,
     spotId: null,
+    lentTo: null,
     storageLocation: 'Garage',
     storageAddress: '123 Home St',
     condition: 'Good',
     isShared: true,
-    status: 'checked_out',
+    status: 'lent',
     imageUrls: ['/api/uploads/bike.jpg'],
     addedOn: new Date()
   },
@@ -62,11 +65,12 @@ export const mockItems: Item[] = [
     owner: 'testuser',
     locationId: 2,
     spotId: null,
+    lentTo: null,
     storageLocation: 'Shed',
     storageAddress: '123 Home St',
     condition: 'Fair',
     isShared: true,
-    status: 'available',
+    status: 'stored',
     imageUrls: ['/api/uploads/kayak.jpg'],
     addedOn: new Date()
   },
@@ -79,11 +83,12 @@ export const mockItems: Item[] = [
     owner: 'testuser',
     locationId: 3,
     spotId: null,
+    lentTo: null,
     storageLocation: 'Storage Unit',
     storageAddress: '456 Storage Way',
     condition: 'Excellent',
     isShared: false,
-    status: 'available',
+    status: 'stored',
     imageUrls: ['/api/uploads/snowboard.jpg'],
     addedOn: new Date()
   }
@@ -92,6 +97,8 @@ export const mockItems: Item[] = [
 // Mock stats
 export const mockStats = {
   total: mockItems.length,
-  available: mockItems.filter(item => item.status === 'available').length,
-  checkedOut: mockItems.filter(item => item.status === 'checked_out').length
+  stored: mockItems.filter(item => item.status === 'stored').length,
+  inUse: mockItems.filter(item => item.status === 'in_use').length,
+  lent: mockItems.filter(item => item.status === 'lent').length,
+  unknown: mockItems.filter(item => item.status === 'unknown').length,
 };

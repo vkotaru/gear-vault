@@ -17,8 +17,10 @@ export const categoryEnum = pgEnum("category", [
 
 // Enum for item status
 export const statusEnum = pgEnum("status", [
-  "available",
-  "checked_out"
+  "stored",
+  "in_use",
+  "unknown",
+  "lent"
 ]);
 
 // Base User schema
@@ -65,7 +67,8 @@ export const items = pgTable("items", {
   storageAddress: text("storage_address"),
   condition: text("condition").default("Good"),
   imageUrls: text("image_urls").array(),
-  status: statusEnum("status").notNull().default("available"),
+  status: statusEnum("status").notNull().default("stored"),
+  lentTo: text("lent_to"),
   addedOn: timestamp("added_on").notNull().defaultNow(),
 });
 

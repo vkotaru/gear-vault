@@ -17,6 +17,7 @@ import GearItemsView from "@/components/inventory/GearItemsView";
 import ViewToggle from "@/components/inventory/ViewToggle";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { CATEGORIES } from "@/lib/categories";
+import { STATUSES } from "@/lib/status";
 
 export default function AllGear() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,8 +103,9 @@ export default function AllGear() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="checked_out">Checked Out</SelectItem>
+              {STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

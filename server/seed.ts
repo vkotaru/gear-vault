@@ -101,10 +101,11 @@ export async function seedDevData() {
   logger.info(`Created ${createdLocations.length} locations`);
 
   // Create items
+  const STATUSES = ["stored", "stored", "stored", "in_use", "lent", "unknown"] as const;
   let created = 0;
   for (const gear of GEAR_DATA) {
     const location = pick(createdLocations);
-    const isCheckedOut = Math.random() < 0.15; // ~15% checked out
+    const status = pick(STATUSES as unknown as string[]);
 
     await storage.createItem({
       name: gear.name,
@@ -117,7 +118,8 @@ export async function seedDevData() {
       storageLocation: location.name,
       storageAddress: location.address,
       condition: pick(CONDITIONS),
-      status: isCheckedOut ? "checked_out" : "available",
+      status: status as any,
+      lentTo: status === "lent" ? pick(["Alex", "Jordan", "Sam"]) : null,
       imageUrls: placeholderImg(gear.name, gear.category),
     });
     created++;

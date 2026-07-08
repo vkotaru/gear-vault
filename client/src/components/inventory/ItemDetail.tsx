@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Item, CheckoutHistory } from "@shared/schema";
+import { statusBadgeClass, statusLabel } from "@/lib/status";
 import { useLocation } from "wouter";
 import {
   ArrowLeft,
@@ -49,91 +50,8 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     queryKey: [`/api/checkout/${itemId}`],
   });
 
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      if (!item) return;
-
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7);
-
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemId: item.id,
-          checkedOutBy: "Current User",
-          dueBack: dueDate.toISOString(),
-        }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to check out item');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Item checked out successfully" });
-      queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/checkout/${itemId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to check out item: ${error.message}`,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const returnMutation = useMutation({
-    mutationFn: async () => {
-      if (!item) return;
-
-      const response = await fetch(`/api/return/${item.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          returnedOn: new Date().toISOString(),
-        }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to return item');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Item returned successfully" });
-      queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/checkout/${itemId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to return item: ${error.message}`,
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleGoBack = () => {
     setLocation('/all-gear');
-  };
-
-  const handleCheckout = () => {
-    checkoutMutation.mutate();
-  };
-
-  const handleReturn = () => {
-    returnMutation.mutate();
   };
 
   if (isLoadingItem) {
@@ -222,14 +140,8 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                   <CardTitle className="text-2xl">{item.name}</CardTitle>
                   <CardDescription>{item.brand || "No brand specified"}</CardDescription>
                 </div>
-                <Badge
-                  className={`${
-                    item.status === 'available'
-                      ? 'bg-primary hover:bg-primary/90'
-                      : 'bg-secondary hover:bg-secondary/90'
-                  }`}
-                >
-                  {item.status === 'available' ? 'Available' : 'Checked Out'}
+                <Badge className={statusBadgeClass(item.status)}>
+                  {item.status === "lent" && item.lentTo ? `Lent to ${item.lentTo}` : statusLabel(item.status)}
                 </Badge>
               </div>
             </CardHeader>
@@ -321,32 +233,14 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                   </TabsContent>
 
                   <TabsContent value="status" className="pt-4">
-                    {item.status === 'checked_out' ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center text-secondary">
-                          <Clock className="h-5 w-5 mr-2" />
-                          <span className="font-medium">Currently checked out</span>
-                        </div>
-
-                        {checkoutHistory.length > 0 && !checkoutHistory[0].returnedOn && (
-                          <div>
-                            <p className="text-muted-foreground ml-7">
-                              Checked out by: <span className="font-medium">{checkoutHistory[0].checkedOutBy}</span>
-                            </p>
-                            {checkoutHistory[0].dueBack && (
-                              <p className="text-muted-foreground ml-7">
-                                Due back: <span className="font-medium">{format(new Date(checkoutHistory[0].dueBack), 'MMMM d, yyyy')}</span>
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-primary">
-                        <Check className="h-5 w-5 mr-2" />
-                        <span className="font-medium">Available for checkout</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge className={statusBadgeClass(item.status)}>
+                        {statusLabel(item.status)}
+                      </Badge>
+                      {item.status === "lent" && item.lentTo && (
+                        <span className="text-muted-foreground">to {item.lentTo}</span>
+                      )}
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -371,48 +265,6 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                 >
                   <Edit className="h-4 w-4 mr-2" /> Edit
                 </Button>
-
-                {item.status === 'available' ? (
-                  <Button
-                    className="bg-secondary hover:bg-secondary/90 flex items-center"
-                    onClick={handleCheckout}
-                    disabled={checkoutMutation.isPending}
-                  >
-                    {checkoutMutation.isPending ? (
-                      <div className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-secondary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </div>
-                    ) : (
-                      <>
-                        <ArrowRightCircle className="h-4 w-4 mr-2" /> Check Out
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    className="bg-primary hover:bg-primary/90 flex items-center"
-                    onClick={handleReturn}
-                    disabled={returnMutation.isPending}
-                  >
-                    {returnMutation.isPending ? (
-                      <div className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </div>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" /> Return Item
-                      </>
-                    )}
-                  </Button>
-                )}
               </div>
             </CardFooter>
           </Card>

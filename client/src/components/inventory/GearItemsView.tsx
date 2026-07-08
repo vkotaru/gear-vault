@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tag } from "lucide-react";
 import type { Item } from "@shared/schema";
 import type { ViewMode } from "@/hooks/use-view-mode";
+import { statusBadgeClass, statusLabel } from "@/lib/status";
+import { categoryLabel } from "@/lib/categories";
 
 interface GearItemsViewProps {
   items: Item[];
@@ -11,18 +13,10 @@ interface GearItemsViewProps {
   renderMenu?: (item: Item) => React.ReactNode;
 }
 
-function statusBadgeClass(status: string) {
-  return status === "available"
-    ? "bg-primary/15 text-primary"
-    : "bg-secondary/15 text-secondary";
-}
-
-function statusLabel(status: string) {
-  return status === "available" ? "Available" : "Checked Out";
-}
-
-function categoryLabel(category: string) {
-  return category.charAt(0).toUpperCase() + category.slice(1);
+function statusText(item: Item) {
+  return item.status === "lent" && item.lentTo
+    ? `Lent to ${item.lentTo}`
+    : statusLabel(item.status);
 }
 
 function Thumb({ item, className }: { item: Item; className?: string }) {
@@ -63,7 +57,7 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
               {item.storageLocation}
             </span>
             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(item.status)}`}>
-              {statusLabel(item.status)}
+              {statusText(item)}
             </span>
             {renderMenu && <div onClick={stop}>{renderMenu(item)}</div>}
           </div>
@@ -84,7 +78,7 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
             <div className="aspect-square relative overflow-hidden bg-muted">
               <Thumb item={item} className="w-full h-full object-contain" />
               <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusBadgeClass(item.status)}`}>
-                {statusLabel(item.status)}
+                {statusText(item)}
               </span>
             </div>
             <div className="p-2">
@@ -110,7 +104,7 @@ export default function GearItemsView({ items, view, renderMenu }: GearItemsView
             <Thumb item={item} className="w-full h-full object-contain" />
             <div className="absolute top-2 right-2">
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(item.status)}`}>
-                {statusLabel(item.status)}
+                {statusText(item)}
               </span>
             </div>
             {item.isShared && (

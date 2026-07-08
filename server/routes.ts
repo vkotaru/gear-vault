@@ -256,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             storageLocation: "Unsorted",
             isShared: true,
             condition: "Good",
-            status: "available",
+            status: "stored",
             ...fields,
             imageUrls,
           });
@@ -374,13 +374,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stats", isAuthenticated, async (req, res) => {
     try {
       const allItems = await storage.getAllItems();
-      const availableItems = allItems.filter(item => item.status === "available");
-      const checkedOutItems = allItems.filter(item => item.status === "checked_out");
-      
+      const countBy = (s: string) => allItems.filter(item => item.status === s).length;
+
       res.json({
         total: allItems.length,
-        available: availableItems.length,
-        checkedOut: checkedOutItems.length
+        stored: countBy("stored"),
+        inUse: countBy("in_use"),
+        lent: countBy("lent"),
+        unknown: countBy("unknown"),
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch stats" });
