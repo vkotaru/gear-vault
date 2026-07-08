@@ -81,13 +81,16 @@ CREATE TABLE IF NOT EXISTS items (
   image_urls text[],
   status status NOT NULL DEFAULT 'stored',
   lent_to text,
-  added_on timestamp NOT NULL DEFAULT now()
+  added_on timestamp NOT NULL DEFAULT now(),
+  last_seen timestamp
 );
 ALTER TABLE items ADD COLUMN IF NOT EXISTS spot_id integer REFERENCES spots(id);
 ALTER TABLE items ADD COLUMN IF NOT EXISTS lent_to text;
--- Migrate legacy statuses to the current set.
-UPDATE items SET status = 'stored' WHERE status = 'available';
-UPDATE items SET status = 'lent' WHERE status = 'checked_out';
+ALTER TABLE items ADD COLUMN IF NOT EXISTS last_seen timestamp;
+-- Migrate legacy statuses to the current set. Compare via ::text so the old
+-- literals don't need to exist in the enum (they won't on a fresh install).
+UPDATE items SET status = 'stored' WHERE status::text = 'available';
+UPDATE items SET status = 'lent' WHERE status::text = 'checked_out';
 ALTER TABLE items ALTER COLUMN status SET DEFAULT 'stored';
 
 CREATE TABLE IF NOT EXISTS checkout_history (

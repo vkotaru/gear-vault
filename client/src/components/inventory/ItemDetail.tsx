@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -48,6 +48,19 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     isError: isErrorHistory
   } = useQuery<CheckoutHistory[]>({
     queryKey: [`/api/checkout/${itemId}`],
+  });
+
+  const markSeenMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/items/${itemId}/seen`, { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Marked as seen", description: "Last-seen date updated to today." });
+      queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
+    },
   });
 
   const handleGoBack = () => {
@@ -174,11 +187,30 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-1">Added On</h3>
+                  <h3 className="font-semibold mb-1">Bought / Added</h3>
                   <p className="text-muted-foreground flex items-center">
                     <CalendarIcon className="h-4 w-4 mr-1 text-primary" />
                     {format(new Date(item.addedOn), 'MMMM d, yyyy')}
                   </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-1">Last Seen</h3>
+                  <p className="text-muted-foreground flex items-center">
+                    <Clock className="h-4 w-4 mr-1 text-primary" />
+                    {item.lastSeen
+                      ? `${format(new Date(item.lastSeen), 'MMM d, yyyy')} (${formatDistanceToNow(new Date(item.lastSeen), { addSuffix: true })})`
+                      : "Never confirmed"}
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => markSeenMutation.mutate()}
+                    disabled={markSeenMutation.isPending}
+                  >
+                    Mark as seen today
+                  </Button>
                 </div>
               </div>
 

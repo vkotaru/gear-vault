@@ -177,8 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...itemData,
         imageUrls
       });
-      
-      const item = await storage.createItem(validatedItem);
+
+      // Stamp last-seen on creation (you have it in hand right now).
+      const item = await storage.createItem({ ...validatedItem, lastSeen: new Date() });
       logger.info(`POST /api/items - Item created successfully with ID ${item.id}`);
       res.status(201).json(item);
     } catch (error) {
@@ -260,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...fields,
             imageUrls,
           });
-          const created = await storage.createItem(validatedItem);
+          const created = await storage.createItem({ ...validatedItem, lastSeen: new Date() });
           results.imported++;
           logger.info(`POST /api/items/import - Imported "${created.name}" (id ${created.id})`);
         } catch (err: any) {
@@ -315,10 +316,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Editing an item confirms you've seen it — refresh last-seen.
+      updateData.lastSeen = new Date();
+
       const updatedItem = await storage.updateItem(id, updateData);
       res.json(updatedItem);
     } catch (error) {
       res.status(400).json({ message: "Failed to update item", error });
+    }
+  });
+
+  // Quick "I just saw this" — refresh last-seen without a full edit.
+  app.post("/api/items/:id/seen", isAuthenticated, async (req, res) => {
+    try {
+      const updated = await storage.updateItem(parseInt(req.params.id), { lastSeen: new Date() });
+      if (!updated) return res.status(404).json({ message: "Item not found" });
+      res.json(updated);
+    } catch (error) {
+      logger.error("POST /api/items/:id/seen - Error", { error });
+      res.status(500).json({ message: "Failed to update item" });
     }
   });
 

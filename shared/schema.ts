@@ -70,6 +70,7 @@ export const items = pgTable("items", {
   status: statusEnum("status").notNull().default("stored"),
   lentTo: text("lent_to"),
   addedOn: timestamp("added_on").notNull().defaultNow(),
+  lastSeen: timestamp("last_seen"),  // when its whereabouts were last confirmed
 });
 
 // CheckoutHistory schema
@@ -97,6 +98,7 @@ export const insertItemSchema = createInsertSchema(items)
     // Optional purchase/added date. Accepts an ISO date string (from JSON) and
     // coerces it to a Date; when omitted, the DB defaults to now().
     addedOn: z.coerce.date().optional(),
+    lastSeen: z.coerce.date().nullish(),
   });
 
 export const insertCheckoutHistorySchema = createInsertSchema(checkoutHistory).omit({
