@@ -4,6 +4,8 @@ import {
   checkoutHistory,
   locations,
   spots,
+  trips,
+  tripItems,
   type User,
   type InsertUser,
   type Item,
@@ -14,7 +16,9 @@ import {
   type Location,
   type InsertLocation,
   type Spot,
-  type InsertSpot
+  type InsertSpot,
+  type Trip,
+  type InsertTrip
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, isNull, desc } from "drizzle-orm";
@@ -410,6 +414,129 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       logger.error("Failed to delete spot", { error, spotId: id });
+      throw error;
+    }
+  }
+
+  // Trip methods
+  async getAllTrips(owner: string): Promise<(Trip & { itemCount: number })[]> {
+    try {
+      const rows = await db
+        .select()
+        .from(trips)
+        .where(eq(trips.owner, owner))
+        .orderBy(desc(trips.startDate), desc(trips.createdAt));
+      return await Promise.all(
+        rows.map(async (trip) => {
+          const packed = await db.select().from(tripItems).where(eq(tripItems.tripId, trip.id));
+          return { ...trip, itemCount: packed.length };
+        })
+      );
+    } catch (error) {
+      logger.error("Failed to get trips", { error, owner });
+      throw error;
+    }
+  }
+
+  async getTrip(id: number): Promise<Trip | undefined> {
+    try {
+      const [trip] = await db.select().from(trips).where(eq(trips.id, id));
+      return trip || undefined;
+    } catch (error) {
+      logger.error("Failed to get trip", { error, tripId: id });
+      throw error;
+    }
+  }
+
+  async createTrip(trip: InsertTrip & { owner?: string }): Promise<Trip> {
+    try {
+      const [created] = await db.insert(trips).values(trip as any).returning();
+      return created;
+    } catch (error) {
+      logger.error("Failed to create trip", { error, tripName: trip.name });
+      throw error;
+    }
+  }
+
+  async updateTrip(id: number, data: Partial<InsertTrip>): Promise<Trip | undefined> {
+    try {
+      const [updated] = await db.update(trips).set(data as any).where(eq(trips.id, id)).returning();
+      return updated || undefined;
+    } catch (error) {
+      logger.error("Failed to update trip", { error, tripId: id });
+      throw error;
+    }
+  }
+
+  async deleteTrip(id: number): Promise<boolean> {
+    try {
+      await db.delete(tripItems).where(eq(tripItems.tripId, id));
+      const result = await db.delete(trips).where(eq(trips.id, id)).returning({ id: trips.id });
+      return result.length > 0;
+    } catch (error) {
+      logger.error("Failed to delete trip", { error, tripId: id });
+      throw error;
+    }
+  }
+
+  async getTripItems(tripId: number): Promise<Item[]> {
+    try {
+      const links = await db.select().from(tripItems).where(eq(tripItems.tripId, tripId));
+      const result: Item[] = [];
+      for (const link of links) {
+        const [item] = await db.select().from(items).where(eq(items.id, link.itemId));
+        if (item) result.push(item);
+      }
+      return result;
+    } catch (error) {
+      logger.error("Failed to get trip items", { error, tripId });
+      throw error;
+    }
+  }
+
+  async addItemToTrip(tripId: number, itemId: number): Promise<void> {
+    try {
+      // Avoid duplicates.
+      const existing = await db
+        .select()
+        .from(tripItems)
+        .where(and(eq(tripItems.tripId, tripId), eq(tripItems.itemId, itemId)));
+      if (existing.length === 0) {
+        await db.insert(tripItems).values({ tripId, itemId });
+      }
+    } catch (error) {
+      logger.error("Failed to add item to trip", { error, tripId, itemId });
+      throw error;
+    }
+  }
+
+  async removeItemFromTrip(tripId: number, itemId: number): Promise<void> {
+    try {
+      await db
+        .delete(tripItems)
+        .where(and(eq(tripItems.tripId, tripId), eq(tripItems.itemId, itemId)));
+    } catch (error) {
+      logger.error("Failed to remove item from trip", { error, tripId, itemId });
+      throw error;
+    }
+  }
+
+  async getTripsForItem(itemId: number): Promise<Trip[]> {
+    try {
+      const links = await db.select().from(tripItems).where(eq(tripItems.itemId, itemId));
+      const result: Trip[] = [];
+      for (const link of links) {
+        const [trip] = await db.select().from(trips).where(eq(trips.id, link.tripId));
+        if (trip) result.push(trip);
+      }
+      // Most recent first.
+      return result.sort((a, b) => {
+        const da = (a.startDate || a.createdAt).getTime();
+        const dbb = (b.startDate || b.createdAt).getTime();
+        return dbb - da;
+      });
+    } catch (error) {
+      logger.error("Failed to get trips for item", { error, itemId });
       throw error;
     }
   }

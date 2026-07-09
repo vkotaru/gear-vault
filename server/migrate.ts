@@ -102,6 +102,24 @@ CREATE TABLE IF NOT EXISTS checkout_history (
   returned_on timestamp
 );
 
+CREATE TABLE IF NOT EXISTS trips (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  owner text,
+  destination text,
+  notes text,
+  url text,
+  start_date timestamp,
+  end_date timestamp,
+  created_at timestamp NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS trip_items (
+  id serial PRIMARY KEY,
+  trip_id integer NOT NULL REFERENCES trips(id),
+  item_id integer NOT NULL REFERENCES items(id)
+);
+
 -- One-time backfill: legacy places created before ownership existed have a NULL
 -- owner. Assign them to the sole user (only when there is exactly one), so a
 -- single-user install needs no manual step. Multi-user installs are left

@@ -8,9 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Item, CheckoutHistory } from "@shared/schema";
+import { Item, CheckoutHistory, Trip } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   ArrowLeft,
   Edit,
@@ -48,6 +48,10 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     isError: isErrorHistory
   } = useQuery<CheckoutHistory[]>({
     queryKey: [`/api/checkout/${itemId}`],
+  });
+
+  const { data: itemTrips = [] } = useQuery<Trip[]>({
+    queryKey: [`/api/items/${itemId}/trips`],
   });
 
   const markSeenMutation = useMutation({
@@ -222,6 +226,27 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                 </p>
                 {item.storageAddress && (
                   <p className="text-muted-foreground text-sm ml-5 mt-1">{item.storageAddress}</p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-1">Trips</h3>
+                {itemTrips.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">Not taken on any trip yet.</p>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      Last trip:{" "}
+                      <Link href={`/trips/${itemTrips[0].id}`} className="text-primary hover:underline">
+                        {itemTrips[0].name}
+                      </Link>
+                    </p>
+                    {itemTrips.length > 1 && (
+                      <p className="text-xs text-muted-foreground">
+                        Also on: {itemTrips.slice(1).map((t) => t.name).join(", ")}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

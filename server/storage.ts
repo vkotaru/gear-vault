@@ -9,7 +9,9 @@ import type {
   Location,
   InsertLocation,
   Spot,
-  InsertSpot
+  InsertSpot,
+  Trip,
+  InsertTrip
 } from "@shared/schema";
 import session from "express-session";
 import { DatabaseStorage } from "./database-storage";
@@ -50,6 +52,17 @@ export interface IStorage {
   getSpotsByLocation(locationId: number): Promise<Spot[]>;
   createSpot(spot: InsertSpot): Promise<Spot>;
   deleteSpot(id: number): Promise<boolean>;
+
+  // Trip methods (scoped to an owner)
+  getAllTrips(owner: string): Promise<(Trip & { itemCount: number })[]>;
+  getTrip(id: number): Promise<Trip | undefined>;
+  createTrip(trip: InsertTrip & { owner?: string }): Promise<Trip>;
+  updateTrip(id: number, trip: Partial<InsertTrip>): Promise<Trip | undefined>;
+  deleteTrip(id: number): Promise<boolean>;
+  getTripItems(tripId: number): Promise<Item[]>;
+  addItemToTrip(tripId: number, itemId: number): Promise<void>;
+  removeItemFromTrip(tripId: number, itemId: number): Promise<void>;
+  getTripsForItem(itemId: number): Promise<Trip[]>;
 
   // Session store
   sessionStore: session.Store;

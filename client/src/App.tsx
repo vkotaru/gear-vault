@@ -9,6 +9,8 @@ import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/Dashboard";
 import EditItem from "@/pages/EditItem";
 import ImportGear from "@/pages/ImportGear";
+import Trips from "@/pages/Trips";
+import TripDetail from "@/pages/TripDetail";
 import AllGear from "@/pages/AllGear";
 import MyGear from "@/pages/MyGear";
 import SharedGear from "@/pages/SharedGear";
@@ -27,6 +29,10 @@ function Router() {
       <ProtectedRoute path="/shared-gear" component={SharedGear} />
       <ProtectedRoute path="/checked-out" component={CheckedOutGear} />
       <ProtectedRoute path="/locations" component={Locations} />
+      <ProtectedRoute path="/trips" component={Trips} />
+      <Route path="/trips/:id">
+        {(params) => <TripDetail id={params.id} />}
+      </Route>
       <ProtectedRoute path="/import" component={ImportGear} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/items/:id/edit">

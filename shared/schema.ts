@@ -73,6 +73,26 @@ export const items = pgTable("items", {
   lastSeen: timestamp("last_seen"),  // when its whereabouts were last confirmed
 });
 
+// Trip schema — an outing you take gear on (private per user)
+export const trips = pgTable("trips", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  owner: text("owner"),  // username of the creator; trips are private per user
+  destination: text("destination"),
+  notes: text("notes"),
+  url: text("url"),  // optional link (trip report, photos, AllTrails, etc.)
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Join table: which items were taken on which trip (many-to-many)
+export const tripItems = pgTable("trip_items", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  itemId: integer("item_id").notNull().references(() => items.id),
+});
+
 // CheckoutHistory schema
 export const checkoutHistory = pgTable("checkout_history", {
   id: serial("id").primaryKey(),
@@ -122,6 +142,21 @@ export const insertSpotSchema = createInsertSchema(spots).omit({
   createdAt: true,
 });
 
+// Trip schemas
+export const insertTripSchema = createInsertSchema(trips)
+  .omit({
+    id: true,
+    createdAt: true,
+    owner: true, // set server-side from the session
+  })
+  .extend({
+    startDate: z.coerce.date().nullish(),
+    endDate: z.coerce.date().nullish(),
+    destination: z.string().nullish(),
+    notes: z.string().nullish(),
+    url: z.union([z.string().url(), z.literal("")]).nullish(),
+  });
+
 // TypeScript types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -131,6 +166,10 @@ export type Location = typeof locations.$inferSelect;
 
 export type InsertSpot = z.infer<typeof insertSpotSchema>;
 export type Spot = typeof spots.$inferSelect;
+
+export type InsertTrip = z.infer<typeof insertTripSchema>;
+export type Trip = typeof trips.$inferSelect;
+export type TripItem = typeof tripItems.$inferSelect;
 
 export type InsertItem = z.infer<typeof insertItemSchema>;
 export type Item = typeof items.$inferSelect;

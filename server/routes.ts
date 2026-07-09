@@ -12,7 +12,8 @@ import {
   insertCheckoutHistorySchema,
   updateCheckoutHistorySchema,
   insertLocationSchema,
-  insertSpotSchema
+  insertSpotSchema,
+  insertTripSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import logger from "./logger";
@@ -530,6 +531,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logger.error("DELETE spot - Error", { error, spotId: id });
       res.status(500).json({ message: "Failed to delete spot" });
+    }
+  });
+
+  // Trip routes (private per user)
+  const ownsTrip = async (id: number, username: string) => {
+    const trip = await storage.getTrip(id);
+    return trip && trip.owner === username ? trip : null;
+  };
+
+  app.get("/api/trips", isAuthenticated, async (req, res) => {
+    try {
+      res.json(await storage.getAllTrips(req.user!.username));
+    } catch (error) {
+      logger.error("GET /api/trips - Error", { error });
+      res.status(500).json({ message: "Failed to fetch trips" });
+    }
+  });
+
+  app.get("/api/trips/:id", isAuthenticated, async (req, res) => {
+    try {
+      const trip = await ownsTrip(parseInt(req.params.id), req.user!.username);
+      if (!trip) return res.status(404).json({ message: "Trip not found" });
+      const items = await storage.getTripItems(trip.id);
+      res.json({ ...trip, items });
+    } catch (error) {
+      logger.error("GET /api/trips/:id - Error", { error });
+      res.status(500).json({ message: "Failed to fetch trip" });
+    }
+  });
+
+  app.post("/api/trips", isAuthenticated, async (req, res) => {
+    try {
+      const validated = insertTripSchema.parse(req.body);
+      const trip = await storage.createTrip({ ...validated, owner: req.user!.username });
+      res.status(201).json(trip);
+    } catch (error) {
+      logger.error("POST /api/trips - Error", { error });
+      res.status(400).json({ message: "Invalid trip data", error });
+    }
+  });
+
+  app.put("/api/trips/:id", isAuthenticated, async (req, res) => {
+    try {
+      const trip = await ownsTrip(parseInt(req.params.id), req.user!.username);
+      if (!trip) return res.status(404).json({ message: "Trip not found" });
+      const validated = insertTripSchema.parse(req.body);
+      res.json(await storage.updateTrip(trip.id, validated));
+    } catch (error) {
+      logger.error("PUT /api/trips/:id - Error", { error });
+      res.status(400).json({ message: "Invalid trip data", error });
+    }
+  });
+
+  app.delete("/api/trips/:id", isAuthenticated, async (req, res) => {
+    try {
+      const trip = await ownsTrip(parseInt(req.params.id), req.user!.username);
+      if (!trip) return res.status(404).json({ message: "Trip not found" });
+      await storage.deleteTrip(trip.id);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("DELETE /api/trips/:id - Error", { error });
+      res.status(500).json({ message: "Failed to delete trip" });
+    }
+  });
+
+  app.post("/api/trips/:id/items", isAuthenticated, async (req, res) => {
+    try {
+      const trip = await ownsTrip(parseInt(req.params.id), req.user!.username);
+      if (!trip) return res.status(404).json({ message: "Trip not found" });
+      const itemIds: number[] = Array.isArray(req.body.itemIds)
+        ? req.body.itemIds
+        : req.body.itemId != null ? [req.body.itemId] : [];
+      for (const itemId of itemIds) {
+        await storage.addItemToTrip(trip.id, itemId);
+      }
+      res.json(await storage.getTripItems(trip.id));
+    } catch (error) {
+      logger.error("POST /api/trips/:id/items - Error", { error });
+      res.status(400).json({ message: "Failed to add items to trip" });
+    }
+  });
+
+  app.delete("/api/trips/:id/items/:itemId", isAuthenticated, async (req, res) => {
+    try {
+      const trip = await ownsTrip(parseInt(req.params.id), req.user!.username);
+      if (!trip) return res.status(404).json({ message: "Trip not found" });
+      await storage.removeItemFromTrip(trip.id, parseInt(req.params.itemId));
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("DELETE /api/trips/:id/items/:itemId - Error", { error });
+      res.status(500).json({ message: "Failed to remove item from trip" });
+    }
+  });
+
+  app.get("/api/items/:id/trips", isAuthenticated, async (req, res) => {
+    try {
+      res.json(await storage.getTripsForItem(parseInt(req.params.id)));
+    } catch (error) {
+      logger.error("GET /api/items/:id/trips - Error", { error });
+      res.status(500).json({ message: "Failed to fetch item trips" });
     }
   });
 
