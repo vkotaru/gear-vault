@@ -105,7 +105,7 @@ export class DatabaseStorage implements IStorage {
   async getAllItems(): Promise<Item[]> {
     try {
       // Cap the result set to avoid unbounded reads
-      return await db.select().from(items).limit(100);
+      return await db.select().from(items).limit(1000);
     } catch (error) {
       logger.error("Failed to get all items", { error });
       throw error;
@@ -124,7 +124,7 @@ export class DatabaseStorage implements IStorage {
 
   async getItemsByOwner(owner: string): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.owner, owner)).limit(50);
+      return await db.select().from(items).where(eq(items.owner, owner)).limit(1000);
     } catch (error) {
       logger.error("Failed to get items by owner", { error, owner });
       throw error;
@@ -133,7 +133,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSharedItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.isShared, true)).limit(50);
+      return await db.select().from(items).where(eq(items.isShared, true)).limit(1000);
     } catch (error) {
       logger.error("Failed to get shared items", { error });
       throw error;
@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCheckedOutItems(): Promise<Item[]> {
     try {
-      return await db.select().from(items).where(eq(items.status, "lent")).limit(50);
+      return await db.select().from(items).where(eq(items.status, "lent")).limit(1000);
     } catch (error) {
       logger.error("Failed to get checked out items", { error });
       throw error;
@@ -268,8 +268,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const query = db.select().from(locations);
       const rows = owner
-        ? await query.where(eq(locations.owner, owner)).limit(100)
-        : await query.limit(100);
+        ? await query.where(eq(locations.owner, owner)).limit(1000)
+        : await query.limit(1000);
       return rows;
     } catch (error) {
       logger.error("Failed to get all locations", { error });

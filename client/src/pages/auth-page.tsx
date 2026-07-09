@@ -97,6 +97,7 @@ export default function AuthPage() {
                       <Input
                         id="login-username"
                         placeholder="Enter your username"
+                        autoComplete="username"
                         {...loginForm.register("username")}
                       />
                       {loginForm.formState.errors.username && (
@@ -111,6 +112,7 @@ export default function AuthPage() {
                         id="login-password"
                         type="password"
                         placeholder="Enter your password"
+                        autoComplete="current-password"
                         {...loginForm.register("password")}
                       />
                       {loginForm.formState.errors.password && (
@@ -155,6 +157,7 @@ export default function AuthPage() {
                       <Input
                         id="register-username"
                         placeholder="Choose a username"
+                        autoComplete="username"
                         {...registerForm.register("username")}
                       />
                       {registerForm.formState.errors.username && (
@@ -169,6 +172,7 @@ export default function AuthPage() {
                         id="register-password"
                         type="password"
                         placeholder="Choose a password"
+                        autoComplete="new-password"
                         {...registerForm.register("password")}
                       />
                       {registerForm.formState.errors.password && (
