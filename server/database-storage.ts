@@ -178,6 +178,9 @@ export class DatabaseStorage implements IStorage {
 
   async deleteItem(id: number): Promise<boolean> {
     try {
+      // Remove dependent rows first (no ON DELETE cascade on these FKs).
+      await db.delete(tripItems).where(eq(tripItems.itemId, id));
+      await db.delete(checkoutHistory).where(eq(checkoutHistory.itemId, id));
       const result = await db
         .delete(items)
         .where(eq(items.id, id))

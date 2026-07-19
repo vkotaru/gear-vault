@@ -423,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logger.info(`GET /api/locations/${id} - Fetching location by ID with item count`);
     try {
       const location = await storage.getLocationWithItemCount(id);
-      if (!location) {
+      if (!location || location.owner !== req.user!.username) {
         logger.warn(`GET /api/locations/${id} - Location not found`);
         return res.status(404).json({ message: "Location not found" });
       }
@@ -453,12 +453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logger.info(`PUT /api/locations/${id} - Updating location`);
     try {
       const existingLocation = await storage.getLocation(id);
-      
-      if (!existingLocation) {
+
+      if (!existingLocation || existingLocation.owner !== req.user!.username) {
         logger.warn(`PUT /api/locations/${id} - Location not found`);
         return res.status(404).json({ message: "Location not found" });
       }
-      
+
       const validatedLocation = insertLocationSchema.parse(req.body);
       const updatedLocation = await storage.updateLocation(id, validatedLocation);
       
@@ -474,8 +474,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const id = parseInt(req.params.id);
     logger.info(`DELETE /api/locations/${id} - Deleting location`);
     try {
+      const existing = await storage.getLocation(id);
+      if (!existing || existing.owner !== req.user!.username) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+
       const success = await storage.deleteLocation(id);
-      
+
       if (!success) {
         logger.warn(`DELETE /api/locations/${id} - Location not found or has associated items`);
         return res.status(400).json({ 
@@ -627,7 +632,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/items/:id/trips", isAuthenticated, async (req, res) => {
     try {
-      res.json(await storage.getTripsForItem(parseInt(req.params.id)));
+      const all = await storage.getTripsForItem(parseInt(req.params.id));
+      // Only surface the requesting user's own trips (trips are private).
+      res.json(all.filter((t) => t.owner === req.user!.username));
     } catch (error) {
       logger.error("GET /api/items/:id/trips - Error", { error });
       res.status(500).json({ message: "Failed to fetch item trips" });

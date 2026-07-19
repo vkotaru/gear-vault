@@ -21,6 +21,11 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6),
 });
 
+const registerSchema = z.object({
+  username: z.string().min(3),
+  password: z.string().min(6),
+});
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
@@ -216,21 +221,34 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    try {
+      // Validate and take ONLY username/password — never spread req.body into
+      // the insert (would allow injecting googleId/email/etc. → account takeover).
+      const parsed = registerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).send("Username must be 3+ characters and password 6+");
+      }
+      const { username, password } = parsed.data;
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+      });
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        const { password: _pw, ...safeUser } = user;
+        res.status(201).json(safeUser);
+      });
+    } catch (error) {
+      logger.error("POST /api/register - Error", { error });
+      res.status(500).send("Registration failed");
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      const { password, ...safeUser } = user;
-      res.status(201).json(safeUser);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
