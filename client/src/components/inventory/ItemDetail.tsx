@@ -6,17 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Item, CheckoutHistory, Trip } from "@shared/schema";
+import { Item, Trip } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
 import { Link, useLocation } from "wouter";
 import {
   ArrowLeft,
   Edit,
-  ArrowRightCircle,
   Clock,
-  Check,
   X,
   User,
   CalendarIcon,
@@ -43,13 +40,6 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     queryKey: [`/api/items/${itemId}`],
   });
 
-  const {
-    data: checkoutHistory = [],
-    isLoading: isLoadingHistory,
-    isError: isErrorHistory
-  } = useQuery<CheckoutHistory[]>({
-    queryKey: [`/api/checkout/${itemId}`],
-  });
 
   const { data: itemTrips = [] } = useQuery<Trip[]>({
     queryKey: [`/api/items/${itemId}/trips`],
@@ -262,57 +252,6 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                 )}
               </div>
 
-              <div>
-                <Tabs defaultValue="history">
-                  <TabsList>
-                    <TabsTrigger value="history">Checkout History</TabsTrigger>
-                    <TabsTrigger value="status">Status</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="history" className="space-y-3 text-sm pt-4">
-                    {isLoadingHistory ? (
-                      <div className="py-3 text-center">
-                        <div className="animate-spin h-5 w-5 border-b-2 border-primary mx-auto"></div>
-                      </div>
-                    ) : isErrorHistory ? (
-                      <div className="py-3 text-center text-destructive">
-                        Failed to load checkout history
-                      </div>
-                    ) : checkoutHistory.length === 0 ? (
-                      <div className="py-3 text-center text-muted-foreground">
-                        No checkout history available
-                      </div>
-                    ) : (
-                      checkoutHistory.map((record) => (
-                        <div key={record.id} className="flex justify-between">
-                          <div className="flex items-center">
-                            <span className={`w-2 h-2 rounded-full mr-2 ${record.returnedOn ? 'bg-primary' : 'bg-secondary'}`}></span>
-                            <span>
-                              {record.returnedOn
-                                ? `Returned by ${record.checkedOutBy}`
-                                : `Checked out by ${record.checkedOutBy}`}
-                            </span>
-                          </div>
-                          <span className="text-muted-foreground">
-                            {format(new Date(record.returnedOn || record.checkedOutOn), 'MMM dd, yyyy')}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="status" className="pt-4">
-                    <div className="flex items-center gap-2">
-                      <Badge className={statusBadgeClass(item.status)}>
-                        {statusLabel(item.status)}
-                      </Badge>
-                      {item.status === "lent" && item.lentTo && (
-                        <span className="text-muted-foreground">to {item.lentTo}</span>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
             </CardContent>
 
             <CardFooter className="border-t border-border pt-4 flex flex-wrap justify-between items-center">
