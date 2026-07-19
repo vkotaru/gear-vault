@@ -296,6 +296,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData = JSON.parse(req.body.item);
       }
 
+      // Coerce the bought/added date (sent as a yyyy-mm-dd string) to a Date;
+      // drop it if empty/invalid so it doesn't overwrite the existing value.
+      if (updateData.addedOn) {
+        const d = new Date(updateData.addedOn);
+        if (Number.isNaN(d.getTime())) delete updateData.addedOn;
+        else updateData.addedOn = d;
+      } else {
+        delete updateData.addedOn;
+      }
+
       // Determine the final image list: the client sends the images it wants to
       // keep (removals are simply omitted); newly uploaded files are appended.
       const keptImages: string[] = Array.isArray(updateData.imageUrls)

@@ -46,7 +46,16 @@ const formSchema = insertItemSchema.extend({
   category: z.enum(["camping", "hiking", "biking", "water", "winter", "clothing", "electronics", "utilities", "other"]),
   owner: z.string().min(1, "Owner is required"),
   storageLocation: z.string().min(1, "Storage location is required"),
+  // Bought/added date as a plain yyyy-mm-dd string ("" = unset); coerced server-side.
+  addedOn: z.string().optional(),
 });
+
+// Format a date value as yyyy-mm-dd for a date input.
+function toDateInput(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  const date = new Date(d);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
 
 interface AddItemFormProps {
   /** When provided, the form edits this item instead of creating a new one. */
@@ -98,6 +107,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           imageUrls: item.imageUrls ?? [],
           status: item.status,
           lentTo: item.lentTo ?? "",
+          addedOn: toDateInput(item.addedOn),
         }
       : {
           name: "",
@@ -114,6 +124,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
           imageUrls: [],
           status: "stored",
           lentTo: "",
+          addedOn: "",
         },
   });
 
@@ -130,7 +141,9 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
 
       // Append item JSON data. In edit mode, send the images we're keeping so
       // the server can drop the removed ones; new files are appended server-side.
-      const payload = isEdit ? { ...data, imageUrls: keptImages } : data;
+      const payload: any = isEdit ? { ...data, imageUrls: keptImages } : { ...data };
+      // Omit an empty bought/added date so the server keeps the default/existing value.
+      if (!payload.addedOn) delete payload.addedOn;
       formData.append("item", JSON.stringify(payload));
 
       const response = await fetch(isEdit ? `/api/items/${item!.id}` : "/api/items", {
@@ -321,6 +334,21 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                         <SelectItem value="Poor">Poor</SelectItem>
                       </SelectContent>
                     </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="addedOn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bought / Added</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormDescription>When you got it. Leave blank for today.</FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
