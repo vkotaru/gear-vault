@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Item, Trip } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
+import { categoryLabel } from "@/lib/categories";
 import { Link, useLocation } from "wouter";
 import {
   ArrowLeft,
@@ -165,7 +166,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                 <div>
                   <h3 className="font-semibold mb-1">Category</h3>
-                  <p className="text-muted-foreground capitalize">{item.category}</p>
+                  <p className="text-muted-foreground">{categoryLabel(item.category)}</p>
                 </div>
 
                 <div>

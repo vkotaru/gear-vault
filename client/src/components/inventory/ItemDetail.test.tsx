@@ -52,30 +52,18 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 describe('ItemDetail', () => {
+  // Return [] for list endpoints (e.g. the item's trips), the item otherwise.
+  const itemQuery = (options: any): any => {
+    const key = options.queryKey?.[0];
+    if (typeof key === 'string' && key.endsWith('/trips')) {
+      return { data: [], isLoading: false, error: null, isError: false };
+    }
+    return { data: mockItems[0], isLoading: false, error: null, isError: false };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock the useQuery to return mock item
-    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
-      const queryKey = options.queryKey;
-      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
-        // Mock checkout history data
-        return {
-          data: [],  // Return empty array for checkout history
-          isLoading: false,
-          error: null,
-          isError: false
-        };
-      } else {
-        // Mock regular item data
-        return {
-          data: mockItems[0],
-          isLoading: false,
-          error: null,
-          isError: false
-        };
-      }
-    });
+    vi.mocked(tanstackQuery.useQuery).mockImplementation(itemQuery);
   });
 
   it('renders correctly with item data', async () => {
@@ -99,67 +87,42 @@ describe('ItemDetail', () => {
   });
 
   it('shows loading state', async () => {
-    // Override the mock to show loading state
     vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
-      const queryKey = options.queryKey;
-      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
-        return {
-          data: [],
-          isLoading: false,
-          error: null,
-          isError: false
-        };
-      } else {
-        return {
-          data: undefined,
-          isLoading: true,
-          error: null,
-          isError: false
-        };
+      const key = options.queryKey?.[0];
+      if (typeof key === 'string' && key.endsWith('/trips')) {
+        return { data: [], isLoading: false, error: null, isError: false };
       }
+      return { data: undefined, isLoading: true, error: null, isError: false };
     });
-    
-    render(<ItemDetail itemId={1} />);
-    
-    // Should display loading state
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+    const { container } = render(<ItemDetail itemId={1} />);
+
+    // Loading is shown as a spinner (no text)
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('handles error state', async () => {
-    // Override the mock to show error state
     vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
-      const queryKey = options.queryKey;
-      if (Array.isArray(queryKey) && queryKey[0] === '/api/items/checkout-history') {
-        return {
-          data: [],
-          isLoading: false,
-          error: null,
-          isError: false
-        };
-      } else {
-        return {
-          data: undefined,
-          isLoading: false,
-          error: new Error('Failed to load item'),
-          isError: true
-        };
+      const key = options.queryKey?.[0];
+      if (typeof key === 'string' && key.endsWith('/trips')) {
+        return { data: [], isLoading: false, error: null, isError: false };
       }
+      return { data: undefined, isLoading: false, error: new Error('Failed to load item'), isError: true };
     });
-    
+
     render(<ItemDetail itemId={1} />);
-    
+
     // Should display error message
     expect(screen.getByText(/error/i)).toBeInTheDocument();
     expect(screen.getByText(/Unable to load the item details/i)).toBeInTheDocument();
   });
 
-  it('shows availability status correctly', async () => {
+  it('shows status correctly', async () => {
     render(<ItemDetail itemId={1} />);
-    
-    // Wait for the component to render with data
+
     await waitFor(() => {
-      // Check if the status is displayed correctly (Available)
-      expect(screen.getByText('Available')).toBeInTheDocument();
+      // mockItems[0].status is 'stored' -> badge reads "Stored"
+      expect(screen.getByText('Stored')).toBeInTheDocument();
     });
   });
 });

@@ -23,41 +23,43 @@ vi.mock('./storage', () => {
         return Promise.resolve(items);
       }),
       getCheckedOutItems: vi.fn(() => {
-        const items = mockItems.filter(item => item.status === 'checked_out');
+        const items = mockItems.filter(item => item.status === 'lent');
         return Promise.resolve(items);
       }),
-      // Add more mocked methods as needed
-      sessionStore: {}
+      // Minimal express-session store: needs .on() at setup and the CRUD hooks.
+      sessionStore: {
+        on: vi.fn(),
+        get: vi.fn((_sid: string, cb: any) => cb(null, null)),
+        set: vi.fn((_sid: string, _sess: any, cb: any) => cb && cb(null)),
+        destroy: vi.fn((_sid: string, cb: any) => cb && cb(null)),
+        touch: vi.fn((_sid: string, _sess: any, cb: any) => cb && cb(null)),
+      }
     }
   };
 });
 
-// Mock the logger
+// Mock express-session to a no-op passthrough — these tests exercise
+// route -> storage, not session handling, and the real middleware would try to
+// use the (mocked) session store.
+vi.mock('express-session', () => {
+  const session: any = () => (req: any, _res: any, next: any) => {
+    req.session = {};
+    next();
+  };
+  session.Store = class {};
+  return { default: session };
+});
+
+// Mock the logger. routes.ts imports it as a default export, so expose both.
 vi.mock('./logger', () => {
-  return {
-    logger: {
-      info: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      warn: vi.fn()
-    }
-  };
+  const logger = { info: vi.fn(), error: vi.fn(), debug: vi.fn(), warn: vi.fn() };
+  return { logger, default: logger };
 });
 
-// Mock authentication middleware
-vi.mock('passport', () => {
-  return {
-    initialize: vi.fn(() => (req: any, res: any, next: any) => next()),
-    session: vi.fn(() => (req: any, res: any, next: any) => next()),
-    authenticate: vi.fn(() => (req: any, res: any, next: any) => {
-      req.user = mockUser;
-      next();
-    }),
-    serializeUser: vi.fn(),
-    deserializeUser: vi.fn(),
-    use: vi.fn()
-  };
-});
+// Note: passport is intentionally NOT mocked. With storage and express-session
+// mocked and the test middleware below setting req.user/req.isAuthenticated,
+// real passport is a harmless passthrough for these unauthenticated-path GETs
+// (mocking it caused request hangs).
 
 describe('API Routes', () => {
   let app: express.Express;
@@ -110,12 +112,12 @@ describe('API Routes', () => {
   });
 
   describe('GET /api/items/checked-out', () => {
-    it('returns only checked out items', async () => {
+    it('returns only lent-out items', async () => {
       const response = await request.get('/api/items/checked-out');
-      
+
       expect(response.status).toBe(200);
-      const checkedOutItems = mockItems.filter(item => item.status === 'checked_out');
-      expect(response.body).toHaveLength(checkedOutItems.length);
+      const lentItems = mockItems.filter(item => item.status === 'lent');
+      expect(response.body).toHaveLength(lentItems.length);
     });
   });
 
