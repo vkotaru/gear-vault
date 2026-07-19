@@ -21,7 +21,8 @@ import {
   User,
   CalendarIcon,
   MapPin,
-  Info
+  Info,
+  Route
 } from "lucide-react";
 
 interface ItemDetailProps {
@@ -230,23 +231,34 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-1">Trips</h3>
+                <h3 className="font-semibold mb-1">
+                  Trip History{itemTrips.length > 0 ? ` (${itemTrips.length})` : ""}
+                </h3>
                 {itemTrips.length === 0 ? (
                   <p className="text-muted-foreground text-sm">Not taken on any trip yet.</p>
                 ) : (
-                  <div className="space-y-1">
-                    <p className="text-sm">
-                      Last trip:{" "}
-                      <Link href={`/trips/${itemTrips[0].id}`} className="text-primary hover:underline">
-                        {itemTrips[0].name}
-                      </Link>
-                    </p>
-                    {itemTrips.length > 1 && (
-                      <p className="text-xs text-muted-foreground">
-                        Also on: {itemTrips.slice(1).map((t) => t.name).join(", ")}
-                      </p>
-                    )}
-                  </div>
+                  <ul className="space-y-1.5">
+                    {itemTrips.map((t, i) => (
+                      <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Route className="h-4 w-4 text-primary shrink-0" />
+                          <Link href={`/trips/${t.id}`} className="text-primary hover:underline truncate">
+                            {t.name}
+                          </Link>
+                          {i === 0 && (
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground border rounded px-1 py-0.5 shrink-0">
+                              Last
+                            </span>
+                          )}
+                        </div>
+                        {t.startDate && (
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {format(new Date(t.startDate), "MMM yyyy")}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
 
