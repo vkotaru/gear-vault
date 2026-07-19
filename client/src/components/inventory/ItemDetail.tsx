@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Item, Trip } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
 import { categoryLabel } from "@/lib/categories";
+import { formatDateOnly } from "@/lib/date";
 import { Link, useLocation } from "wouter";
 import {
   ArrowLeft,
@@ -186,7 +187,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                   <h3 className="font-semibold mb-1">Bought / Added</h3>
                   <p className="text-muted-foreground flex items-center">
                     <CalendarIcon className="h-4 w-4 mr-1 text-primary" />
-                    {format(new Date(item.addedOn), 'MMMM d, yyyy')}
+                    {formatDateOnly(item.addedOn, 'MMMM d, yyyy')}
                   </p>
                 </div>
 
@@ -244,7 +245,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
                         </div>
                         {t.startDate && (
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {format(new Date(t.startDate), "MMM yyyy")}
+                            {formatDateOnly(t.startDate, "MMM yyyy")}
                           </span>
                         )}
                       </li>

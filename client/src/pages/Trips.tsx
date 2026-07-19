@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { format } from "date-fns";
 import Layout from "@/components/layout/Layout";
+import { formatDateOnly } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -91,8 +91,8 @@ export default function Trips() {
 
   const dateRange = (t: TripWithCount) => {
     if (!t.startDate && !t.endDate) return null;
-    const s = t.startDate ? format(new Date(t.startDate), "MMM d, yyyy") : "";
-    const e = t.endDate ? format(new Date(t.endDate), "MMM d, yyyy") : "";
+    const s = formatDateOnly(t.startDate, "MMM d, yyyy");
+    const e = formatDateOnly(t.endDate, "MMM d, yyyy");
     return s && e ? `${s} – ${e}` : s || e;
   };
 
