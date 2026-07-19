@@ -28,7 +28,7 @@ export default function Header() {
           href="/"
           className="flex items-center gap-2 font-semibold cursor-pointer"
         >
-          <span className="hidden sm:inline-block">GearShare</span>
+          <span className="hidden sm:inline-block">Gear Vault</span>
         </Link>
       </div>
       

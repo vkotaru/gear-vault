@@ -37,7 +37,7 @@ export default function Login() {
               >
                 <path d="M17.5 17.5 14 20l-2.5-5.5L6 12l10-2.5L17.5 7l.5-3.5 3.5.5-2 10-2 3.5z" />
               </svg>
-              GearVault
+              Gear Vault
             </h1>
             <p className="text-muted-foreground mt-2">Your outdoor equipment management system</p>
           </div>

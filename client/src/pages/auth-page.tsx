@@ -70,7 +70,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold">GearShare</h1>
+            <h1 className="text-3xl font-bold">Gear Vault</h1>
             <p className="text-muted-foreground mt-2">
               Manage your camping, hiking, and biking gear
             </p>

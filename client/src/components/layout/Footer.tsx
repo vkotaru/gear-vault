@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="border-t py-4 px-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-muted-foreground">
-          © {currentYear} GearShare. All rights reserved.
+          © {currentYear} Gear Vault. All rights reserved.
         </div>
         <div className="flex gap-4 text-sm">
           <Link href="/privacy" className="text-muted-foreground hover:text-foreground">

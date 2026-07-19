@@ -61,7 +61,7 @@ export default function Sidebar() {
         {/* Mobile close button */}
         <div className="flex items-center justify-between md:hidden">
           <Link href="/" className="flex items-center gap-2 font-semibold cursor-pointer">
-            <span>GearShare</span>
+            <span>Gear Vault</span>
           </Link>
           <Button
             variant="ghost" 
@@ -75,7 +75,7 @@ export default function Sidebar() {
         {/* Logo and title - desktop */}
         <div className="hidden h-16 items-center border-b md:flex">
           <Link href="/" className="flex items-center gap-2 font-semibold cursor-pointer">
-            <span>GearShare</span>
+            <span>Gear Vault</span>
           </Link>
         </div>
         
