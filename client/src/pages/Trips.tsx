@@ -14,6 +14,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Trip } from "@shared/schema";
+import { parseTripLinks } from "@shared/schema";
 import { Loader2, Plus, MapPin, ExternalLink, Calendar, Package, Pencil, Trash2 } from "lucide-react";
 
 type TripWithCount = Trip & { itemCount: number };
@@ -24,6 +25,15 @@ function toDateInput(d: string | Date | null | undefined) {
   if (!d) return "";
   const date = new Date(d);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
+// Short label for a link: its hostname (minus www.), falling back to the URL.
+function linkLabel(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }
 
 export default function Trips() {
@@ -128,11 +138,12 @@ export default function Trips() {
                   <p className="text-sm text-muted-foreground flex items-center">
                     <Package className="h-4 w-4 mr-1 text-primary" /> {t.itemCount} item{t.itemCount === 1 ? "" : "s"}
                   </p>
-                  {t.url && (
-                    <a href={t.url} target="_blank" rel="noreferrer" className="text-sm text-primary flex items-center hover:underline">
-                      <ExternalLink className="h-4 w-4 mr-1" /> Link
+                  {parseTripLinks(t.url).map((link, i) => (
+                    <a key={i} href={link} target="_blank" rel="noreferrer" className="text-sm text-primary flex items-center hover:underline">
+                      <ExternalLink className="h-4 w-4 mr-1 shrink-0" />
+                      <span className="truncate">{linkLabel(link)}</span>
                     </a>
-                  )}
+                  ))}
                   {t.notes && <p className="text-sm text-muted-foreground line-clamp-2">{t.notes}</p>}
                   <div className="flex justify-end gap-2 pt-2">
                     <Button variant="outline" size="sm" onClick={() => openEdit(t)}>
@@ -178,8 +189,8 @@ export default function Trips() {
                 <Input id="trip-dest" value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} placeholder="Havasupai, AZ" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="trip-url">Link (optional)</Label>
-                <Input id="trip-url" type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://… trip report, photos, AllTrails" />
+                <Label htmlFor="trip-url">Links (optional)</Label>
+                <Input id="trip-url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://…, https://… (separate multiple with commas)" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="trip-notes">Notes</Label>

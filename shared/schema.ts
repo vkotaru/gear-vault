@@ -142,6 +142,22 @@ export const insertSpotSchema = createInsertSchema(spots).omit({
   createdAt: true,
 });
 
+// A trip's `url` field holds one or more links as a comma-separated string.
+// parseTripLinks splits and trims it into individual URLs.
+export function parseTripLinks(url: string | null | undefined): string[] {
+  if (!url) return [];
+  return url.split(",").map((u) => u.trim()).filter(Boolean);
+}
+
+function isValidUrl(u: string): boolean {
+  try {
+    new URL(u);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Trip schemas
 export const insertTripSchema = createInsertSchema(trips)
   .omit({
@@ -154,7 +170,14 @@ export const insertTripSchema = createInsertSchema(trips)
     endDate: z.coerce.date().nullish(),
     destination: z.string().nullish(),
     notes: z.string().nullish(),
-    url: z.union([z.string().url(), z.literal("")]).nullish(),
+    // One or more links, comma-separated; each must be a valid URL (or empty).
+    url: z
+      .string()
+      .nullish()
+      .refine(
+        (v) => parseTripLinks(v).every(isValidUrl),
+        { message: "Each link must be a valid URL (separate multiple with commas)" }
+      ),
   });
 
 // TypeScript types

@@ -13,10 +13,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Trip, Item } from "@shared/schema";
+import { parseTripLinks } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
 import { ArrowLeft, Loader2, MapPin, ExternalLink, Calendar, Plus, X, Tag } from "lucide-react";
 
 type TripWithItems = Trip & { items: Item[] };
+
+function linkLabel(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export default function TripDetail({ id }: { id: string }) {
   const tripId = parseInt(id);
@@ -87,11 +96,11 @@ export default function TripDetail({ id }: { id: string }) {
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-muted-foreground">
             {dateRange() && <span className="flex items-center"><Calendar className="h-4 w-4 mr-1" /> {dateRange()}</span>}
             {trip.destination && <span className="flex items-center"><MapPin className="h-4 w-4 mr-1" /> {trip.destination}</span>}
-            {trip.url && (
-              <a href={trip.url} target="_blank" rel="noreferrer" className="flex items-center text-primary hover:underline">
-                <ExternalLink className="h-4 w-4 mr-1" /> Link
+            {parseTripLinks(trip.url).map((link, i) => (
+              <a key={i} href={link} target="_blank" rel="noreferrer" className="flex items-center text-primary hover:underline">
+                <ExternalLink className="h-4 w-4 mr-1" /> {linkLabel(link)}
               </a>
-            )}
+            ))}
           </div>
           {trip.notes && <p className="mt-3 text-sm whitespace-pre-wrap">{trip.notes}</p>}
         </div>
