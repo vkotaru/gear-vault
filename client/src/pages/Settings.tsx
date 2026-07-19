@@ -22,8 +22,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useThemeSettings, COLOR_THEMES, FONT_OPTIONS } from "@/hooks/use-theme-settings";
 import { useLocation } from "wouter";
 import {
-  User, Shield, Bell, Database, Save, Palette, RotateCcw, Check,
+  User, Shield, Bell, Database, Save, Palette, RotateCcw, Check, Tag,
 } from "lucide-react";
+import CategoryManager from "@/components/CategoryManager";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -173,6 +174,10 @@ export default function Settings() {
             <TabsTrigger value="security" className="flex items-center gap-1">
               <Shield className="h-4 w-4" />
               <span>Security</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-1">
+              <Tag className="h-4 w-4" />
+              <span>Categories</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1">
               <Bell className="h-4 w-4" />
@@ -447,6 +452,21 @@ export default function Settings() {
                     {savingPassword ? "Updating..." : "Update Password"}
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Categories Tab */}
+          <TabsContent value="categories">
+            <Card>
+              <CardHeader>
+                <CardTitle>Item Categories</CardTitle>
+                <CardDescription>
+                  Add your own categories (like Running) to use when adding gear.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CategoryManager />
               </CardContent>
             </Card>
           </TabsContent>

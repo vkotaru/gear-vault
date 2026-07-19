@@ -11,7 +11,9 @@ import type {
   Spot,
   InsertSpot,
   Trip,
-  InsertTrip
+  InsertTrip,
+  Category,
+  InsertCategory
 } from "@shared/schema";
 import session from "express-session";
 import { DatabaseStorage } from "./database-storage";
@@ -52,6 +54,11 @@ export interface IStorage {
   getSpotsByLocation(locationId: number): Promise<Spot[]>;
   createSpot(spot: InsertSpot): Promise<Spot>;
   deleteSpot(id: number): Promise<boolean>;
+
+  // Category methods (user-defined, scoped to an owner)
+  getCategories(owner: string): Promise<Category[]>;
+  createCategory(category: InsertCategory & { owner?: string }): Promise<Category>;
+  deleteCategory(id: number, owner: string): Promise<boolean>;
 
   // Trip methods (scoped to an owner)
   getAllTrips(owner: string): Promise<(Trip & { itemCount: number })[]>;

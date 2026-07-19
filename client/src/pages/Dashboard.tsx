@@ -4,7 +4,7 @@ import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import type { Item } from "@shared/schema";
-import { CATEGORIES } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 import {
   BarChart,
   Bar,
@@ -38,6 +38,7 @@ export default function Dashboard() {
     queryKey: ['/api/items'],
   });
 
+  const categories = useCategories();
   const isLoading = statsLoading || itemsLoading;
 
   const chartData = [
@@ -55,11 +56,13 @@ export default function Dashboard() {
   const destructiveColor = root ? `hsl(${root.getPropertyValue("--destructive").trim()})` : "hsl(0 72% 51%)";
   const COLORS = [mutedColor, primaryColor, secondaryColor, destructiveColor];
 
-  // Real counts per category, derived from the inventory.
-  const categoryData = CATEGORIES.map(({ value, label }) => ({
-    name: label,
-    value: items.filter((item) => item.category === value).length,
-  }));
+  // Real counts per category, derived from the inventory (only non-empty ones).
+  const categoryData = categories
+    .map(({ value, label }) => ({
+      name: label,
+      value: items.filter((item) => item.category === value).length,
+    }))
+    .filter((d) => d.value > 0);
 
   // Most recently added items (the schema has no activity log, so we surface
   // additions ordered by addedOn).

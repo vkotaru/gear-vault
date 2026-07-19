@@ -2,18 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "driz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Enum for item categories
-export const categoryEnum = pgEnum("category", [
-  "camping",
-  "hiking",
-  "biking",
-  "water",
-  "winter",
-  "clothing",
-  "electronics",
-  "utilities",
-  "other"
-]);
+// Item categories are stored as free text (see items.category). A built-in set
+// lives in client/src/lib/categories.ts; users can add their own via the
+// categories table below.
 
 // Enum for item status
 export const statusEnum = pgEnum("status", [
@@ -44,6 +35,14 @@ export const locations = pgTable("locations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// User-defined item categories (in addition to the built-in set).
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  owner: text("owner"),  // username of the creator; private per user
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Spot schema — a named sub-location within a place (e.g. "Box 1", "Living Room")
 export const spots = pgTable("spots", {
   id: serial("id").primaryKey(),
@@ -58,7 +57,7 @@ export const items = pgTable("items", {
   name: text("name").notNull(),
   description: text("description"),
   brand: text("brand"),
-  category: categoryEnum("category").notNull(),
+  category: text("category").notNull(),
   owner: text("owner").notNull(),
   isShared: boolean("is_shared").notNull().default(true),
   locationId: integer("location_id").references(() => locations.id),  // Optional field
@@ -142,6 +141,10 @@ export const insertSpotSchema = createInsertSchema(spots).omit({
   createdAt: true,
 });
 
+export const insertCategorySchema = createInsertSchema(categories)
+  .omit({ id: true, createdAt: true, owner: true })
+  .extend({ name: z.string().min(1).max(40) });
+
 // A trip's `url` field holds one or more links as a comma-separated string.
 // parseTripLinks splits and trims it into individual URLs.
 export function parseTripLinks(url: string | null | undefined): string[] {
@@ -189,6 +192,9 @@ export type Location = typeof locations.$inferSelect;
 
 export type InsertSpot = z.infer<typeof insertSpotSchema>;
 export type Spot = typeof spots.$inferSelect;
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
 
 export type InsertTrip = z.infer<typeof insertTripSchema>;
 export type Trip = typeof trips.$inferSelect;

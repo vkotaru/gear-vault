@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Item } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { Search, Package } from "lucide-react";
-import { CATEGORIES } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 
 interface InventoryGridProps {
   queryKey: string;
@@ -21,6 +21,7 @@ export default function InventoryGrid({
 }: InventoryGridProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const categories = useCategories();
 
   const { data: items = [], isLoading, isError, error } = useQuery<Item[]>({
     queryKey: [queryKey],
@@ -102,7 +103,7 @@ export default function InventoryGrid({
           All Categories
         </Button>
 
-        {CATEGORIES.map(({ value, label, icon: Icon }) => (
+        {categories.map(({ value, label, icon: Icon }) => (
           <Button
             key={value}
             variant="outline"

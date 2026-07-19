@@ -6,6 +6,7 @@ import {
   spots,
   trips,
   tripItems,
+  categories,
   type User,
   type InsertUser,
   type Item,
@@ -18,7 +19,9 @@ import {
   type Spot,
   type InsertSpot,
   type Trip,
-  type InsertTrip
+  type InsertTrip,
+  type Category,
+  type InsertCategory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, isNull, desc } from "drizzle-orm";
@@ -540,6 +543,39 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       logger.error("Failed to get trips for item", { error, itemId });
+      throw error;
+    }
+  }
+
+  // Category methods
+  async getCategories(owner: string): Promise<Category[]> {
+    try {
+      return await db.select().from(categories).where(eq(categories.owner, owner));
+    } catch (error) {
+      logger.error("Failed to get categories", { error, owner });
+      throw error;
+    }
+  }
+
+  async createCategory(category: InsertCategory & { owner?: string }): Promise<Category> {
+    try {
+      const [created] = await db.insert(categories).values(category).returning();
+      return created;
+    } catch (error) {
+      logger.error("Failed to create category", { error, name: category.name });
+      throw error;
+    }
+  }
+
+  async deleteCategory(id: number, owner: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(categories)
+        .where(and(eq(categories.id, id), eq(categories.owner, owner)))
+        .returning({ id: categories.id });
+      return result.length > 0;
+    } catch (error) {
+      logger.error("Failed to delete category", { error, categoryId: id });
       throw error;
     }
   }

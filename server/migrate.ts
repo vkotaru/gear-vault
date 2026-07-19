@@ -19,13 +19,6 @@ import { Pool } from "pg";
 // added by ALTER TYPE ADD VALUE within the same transaction).
 const ENUM_SQL = `
 DO $$ BEGIN
-  CREATE TYPE category AS ENUM ('camping','hiking','biking','water','winter','clothing','electronics','utilities','other');
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-ALTER TYPE category ADD VALUE IF NOT EXISTS 'clothing';
-ALTER TYPE category ADD VALUE IF NOT EXISTS 'electronics';
-ALTER TYPE category ADD VALUE IF NOT EXISTS 'utilities';
-
-DO $$ BEGIN
   CREATE TYPE status AS ENUM ('stored','in_use','unknown','lent');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 -- Add the current status values to databases created with the old set
@@ -70,7 +63,7 @@ CREATE TABLE IF NOT EXISTS items (
   name text NOT NULL,
   description text,
   brand text,
-  category category NOT NULL,
+  category text NOT NULL,
   owner text NOT NULL,
   is_shared boolean NOT NULL DEFAULT true,
   location_id integer REFERENCES locations(id),
@@ -87,6 +80,23 @@ CREATE TABLE IF NOT EXISTS items (
 ALTER TABLE items ADD COLUMN IF NOT EXISTS spot_id integer REFERENCES spots(id);
 ALTER TABLE items ADD COLUMN IF NOT EXISTS lent_to text;
 ALTER TABLE items ADD COLUMN IF NOT EXISTS last_seen timestamp;
+-- Convert category from the old enum to free text so users can add their own.
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'items' AND column_name = 'category' AND data_type <> 'text'
+  ) THEN
+    ALTER TABLE items ALTER COLUMN category TYPE text USING category::text;
+  END IF;
+END $$;
+
+-- User-defined categories (built-in ones live in the client).
+CREATE TABLE IF NOT EXISTS categories (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  owner text,
+  created_at timestamp NOT NULL DEFAULT now()
+);
 -- Migrate legacy statuses to the current set. Compare via ::text so the old
 -- literals don't need to exist in the enum (they won't on a fresh install).
 UPDATE items SET status = 'stored' WHERE status::text = 'available';

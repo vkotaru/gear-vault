@@ -16,7 +16,7 @@ import AddItemForm from "@/components/inventory/AddItemForm";
 import GearItemsView from "@/components/inventory/GearItemsView";
 import ViewToggle from "@/components/inventory/ViewToggle";
 import { useViewMode } from "@/hooks/use-view-mode";
-import { CATEGORIES } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 import { STATUSES } from "@/lib/status";
 
 export default function AllGear() {
@@ -24,6 +24,7 @@ export default function AllGear() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [view, setView] = useViewMode("allgear-view");
+  const categories = useCategories();
 
   const { data: items, isLoading } = useQuery<Item[]>({
     queryKey: ['/api/items']
@@ -81,7 +82,7 @@ export default function AllGear() {
             All Categories
           </Button>
 
-          {CATEGORIES.map(({ value, label, icon: Icon }) => (
+          {categories.map(({ value, label, icon: Icon }) => (
             <Button
               key={value}
               variant={categoryFilter === value ? "default" : "outline"}

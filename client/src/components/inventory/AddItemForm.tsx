@@ -35,7 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertItemSchema, type Item } from "@shared/schema";
 import LocationPicker from "@/components/inventory/LocationPicker";
-import { CATEGORIES } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 import { STATUSES } from "@/lib/status";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { X, Plus, Upload, Image } from "lucide-react";
@@ -43,7 +43,7 @@ import { X, Plus, Upload, Image } from "lucide-react";
 // Extend the schema for the form with some validation
 const formSchema = insertItemSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  category: z.enum(["camping", "hiking", "biking", "water", "winter", "clothing", "electronics", "utilities", "other"]),
+  category: z.string().min(1, "Category is required"),
   owner: z.string().min(1, "Owner is required"),
   storageLocation: z.string().min(1, "Storage location is required"),
   // Bought/added date as a plain yyyy-mm-dd string ("" = unset); coerced server-side.
@@ -67,6 +67,7 @@ interface AddItemFormProps {
 
 export default function AddItemForm({ item, open: controlledOpen, onOpenChange }: AddItemFormProps = {}) {
   const isEdit = !!item;
+  const categories = useCategories();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -244,7 +245,7 @@ export default function AddItemForm({ item, open: controlledOpen, onOpenChange }
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {CATEGORIES.map((c) => (
+                        {categories.map((c) => (
                           <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                         ))}
                       </SelectContent>

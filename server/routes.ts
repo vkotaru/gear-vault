@@ -13,7 +13,8 @@ import {
   updateCheckoutHistorySchema,
   insertLocationSchema,
   insertSpotSchema,
-  insertTripSchema
+  insertTripSchema,
+  insertCategorySchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import logger from "./logger";
@@ -546,6 +547,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logger.error("DELETE spot - Error", { error, spotId: id });
       res.status(500).json({ message: "Failed to delete spot" });
+    }
+  });
+
+  // Category routes (user-defined categories; private per user)
+  app.get("/api/categories", isAuthenticated, async (req, res) => {
+    try {
+      res.json(await storage.getCategories(req.user!.username));
+    } catch (error) {
+      logger.error("GET /api/categories - Error", { error });
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.post("/api/categories", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = insertCategorySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Category name is required (1–40 chars)" });
+      }
+      const name = parsed.data.name.trim();
+      // Avoid duplicates (case-insensitive) among the user's categories.
+      const existing = await storage.getCategories(req.user!.username);
+      if (existing.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+        return res.status(400).json({ message: "That category already exists" });
+      }
+      const category = await storage.createCategory({ name, owner: req.user!.username });
+      res.status(201).json(category);
+    } catch (error) {
+      logger.error("POST /api/categories - Error", { error });
+      res.status(400).json({ message: "Invalid category" });
+    }
+  });
+
+  app.delete("/api/categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      const ok = await storage.deleteCategory(parseInt(req.params.id), req.user!.username);
+      if (!ok) return res.status(404).json({ message: "Category not found" });
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("DELETE /api/categories/:id - Error", { error });
+      res.status(500).json({ message: "Failed to delete category" });
     }
   });
 

@@ -57,14 +57,16 @@ vi.mock('@/components/inventory/AddItemForm', () => ({
 describe('AllGear', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock the useQuery to return mock data
-    vi.mocked(tanstackQuery.useQuery).mockReturnValue({
-      data: mockItems,
-      isLoading: false,
-      error: null,
-      isError: false,
-    } as any);
+
+    // Items query returns mock items; the categories query returns [] (so only
+    // built-in category chips render).
+    vi.mocked(tanstackQuery.useQuery).mockImplementation((options: any): any => {
+      const key = options?.queryKey?.[0];
+      if (key === '/api/categories') {
+        return { data: [], isLoading: false, error: null, isError: false };
+      }
+      return { data: mockItems, isLoading: false, error: null, isError: false };
+    });
   });
 
   it('renders correctly with items', async () => {
