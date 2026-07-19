@@ -148,8 +148,13 @@ export default function TripDetail({ id }: { id: string }) {
               ) : candidates.map((item) => (
                 <label key={item.id} className="flex items-center gap-3 py-2 cursor-pointer">
                   <Checkbox checked={selected.has(item.id)} onCheckedChange={() => toggle(item.id)} />
+                  <div className="h-9 w-9 rounded bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                    {item.imageUrls && item.imageUrls.length > 0
+                      ? <img src={item.imageUrls[0]} alt={item.name} className="h-full w-full object-contain" />
+                      : <Tag className="h-4 w-4 text-muted-foreground" />}
+                  </div>
                   <span className="flex-1 truncate">{item.name}</span>
-                  <span className="text-xs text-muted-foreground">{item.brand}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{item.brand}</span>
                 </label>
               ))}
             </div>
