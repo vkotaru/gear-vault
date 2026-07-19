@@ -7,6 +7,7 @@ import {
   trips,
   tripItems,
   categories,
+  BUILTIN_CATEGORIES,
   type User,
   type InsertUser,
   type Item,
@@ -550,19 +551,52 @@ export class DatabaseStorage implements IStorage {
   // Category methods
   async getCategories(owner: string): Promise<Category[]> {
     try {
-      return await db.select().from(categories).where(eq(categories.owner, owner));
+      return await db.select().from(categories).where(eq(categories.owner, owner)).orderBy(categories.id);
     } catch (error) {
       logger.error("Failed to get categories", { error, owner });
       throw error;
     }
   }
 
-  async createCategory(category: InsertCategory & { owner?: string }): Promise<Category> {
+  async seedBuiltinCategories(owner: string): Promise<void> {
+    try {
+      const existing = await db.select().from(categories).where(eq(categories.owner, owner));
+      if (existing.length > 0) return; // already has categories
+      await db.insert(categories).values(
+        BUILTIN_CATEGORIES.map((c) => ({
+          name: c.name,
+          value: c.value,
+          icon: c.icon,
+          builtin: true,
+          owner,
+        }))
+      );
+    } catch (error) {
+      logger.error("Failed to seed built-in categories", { error, owner });
+      throw error;
+    }
+  }
+
+  async createCategory(category: { name: string; value: string; icon: string; builtin: boolean; owner: string }): Promise<Category> {
     try {
       const [created] = await db.insert(categories).values(category).returning();
       return created;
     } catch (error) {
       logger.error("Failed to create category", { error, name: category.name });
+      throw error;
+    }
+  }
+
+  async updateCategory(id: number, owner: string, name: string): Promise<Category | undefined> {
+    try {
+      const [updated] = await db
+        .update(categories)
+        .set({ name })
+        .where(and(eq(categories.id, id), eq(categories.owner, owner)))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      logger.error("Failed to update category", { error, categoryId: id });
       throw error;
     }
   }

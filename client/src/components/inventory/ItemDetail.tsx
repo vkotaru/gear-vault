@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Item, Trip } from "@shared/schema";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
-import { categoryLabel } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 import { formatDateOnly } from "@/lib/date";
 import { Link, useLocation } from "wouter";
 import {
@@ -46,6 +46,8 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   const { data: itemTrips = [] } = useQuery<Trip[]>({
     queryKey: [`/api/items/${itemId}/trips`],
   });
+
+  const { labelFor: categoryLabel } = useCategories();
 
   const markSeenMutation = useMutation({
     mutationFn: async () => {

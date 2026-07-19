@@ -14,7 +14,8 @@ import {
   insertLocationSchema,
   insertSpotSchema,
   insertTripSchema,
-  insertCategorySchema
+  insertCategorySchema,
+  updateCategorySchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import logger from "./logger";
@@ -550,9 +551,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Category routes (user-defined categories; private per user)
+  // Category routes (built-ins are seeded per user; all are editable)
   app.get("/api/categories", isAuthenticated, async (req, res) => {
     try {
+      // Seed the built-in set on first access (existing users included).
+      await storage.seedBuiltinCategories(req.user!.username);
       res.json(await storage.getCategories(req.user!.username));
     } catch (error) {
       logger.error("GET /api/categories - Error", { error });
@@ -567,15 +570,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Category name is required (1–40 chars)" });
       }
       const name = parsed.data.name.trim();
-      // Avoid duplicates (case-insensitive) among the user's categories.
+      // Avoid duplicate names (case-insensitive) among the user's categories.
       const existing = await storage.getCategories(req.user!.username);
       if (existing.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
         return res.status(400).json({ message: "That category already exists" });
       }
-      const category = await storage.createCategory({ name, owner: req.user!.username });
+      // Custom category: its stored value equals its name.
+      const category = await storage.createCategory({
+        name, value: name, icon: "tag", builtin: false, owner: req.user!.username,
+      });
       res.status(201).json(category);
     } catch (error) {
       logger.error("POST /api/categories - Error", { error });
+      res.status(400).json({ message: "Invalid category" });
+    }
+  });
+
+  app.put("/api/categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = updateCategorySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Category name is required (1–40 chars)" });
+      }
+      const name = parsed.data.name.trim();
+      const id = parseInt(req.params.id);
+      // Reject a rename that collides with another category's name.
+      const existing = await storage.getCategories(req.user!.username);
+      if (existing.some((c) => c.id !== id && c.name.toLowerCase() === name.toLowerCase())) {
+        return res.status(400).json({ message: "That category name is already used" });
+      }
+      const updated = await storage.updateCategory(id, req.user!.username, name);
+      if (!updated) return res.status(404).json({ message: "Category not found" });
+      res.json(updated);
+    } catch (error) {
+      logger.error("PUT /api/categories/:id - Error", { error });
       res.status(400).json({ message: "Invalid category" });
     }
   });

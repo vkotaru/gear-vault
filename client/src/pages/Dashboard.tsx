@@ -38,7 +38,7 @@ export default function Dashboard() {
     queryKey: ['/api/items'],
   });
 
-  const categories = useCategories();
+  const { list: categories } = useCategories();
   const isLoading = statsLoading || itemsLoading;
 
   const chartData = [

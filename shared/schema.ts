@@ -35,13 +35,34 @@ export const locations = pgTable("locations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// User-defined item categories (in addition to the built-in set).
+// Item categories, one row per category per user. The built-in set is seeded
+// per user and is editable (rename/remove) just like custom categories.
+//   value  = what's stored in items.category (stable; e.g. "camping"); renames
+//            don't touch it, so items stay linked.
+//   name   = display label (editable).
+//   icon   = icon key for the client to resolve (built-ins keep their icon).
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  value: text("value"),
+  icon: text("icon"),
+  builtin: boolean("builtin").notNull().default(false),
   owner: text("owner"),  // username of the creator; private per user
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// Built-in categories seeded for each user (also the client's icon source).
+export const BUILTIN_CATEGORIES = [
+  { value: "camping", name: "Camping", icon: "camping" },
+  { value: "hiking", name: "Hiking", icon: "hiking" },
+  { value: "biking", name: "Biking", icon: "biking" },
+  { value: "water", name: "Water", icon: "water" },
+  { value: "winter", name: "Winter", icon: "winter" },
+  { value: "clothing", name: "Clothing", icon: "clothing" },
+  { value: "electronics", name: "Electronics", icon: "electronics" },
+  { value: "utilities", name: "Utilities", icon: "utilities" },
+  { value: "other", name: "Other", icon: "other" },
+] as const;
 
 // Spot schema — a named sub-location within a place (e.g. "Box 1", "Living Room")
 export const spots = pgTable("spots", {
@@ -141,9 +162,13 @@ export const insertSpotSchema = createInsertSchema(spots).omit({
   createdAt: true,
 });
 
-export const insertCategorySchema = createInsertSchema(categories)
-  .omit({ id: true, createdAt: true, owner: true })
-  .extend({ name: z.string().min(1).max(40) });
+export const insertCategorySchema = z.object({
+  name: z.string().min(1).max(40),
+});
+
+export const updateCategorySchema = z.object({
+  name: z.string().min(1).max(40),
+});
 
 // A trip's `url` field holds one or more links as a comma-separated string.
 // parseTripLinks splits and trims it into individual URLs.

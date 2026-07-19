@@ -90,13 +90,21 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- User-defined categories (built-in ones live in the client).
+-- Item categories, one row per category per user (built-ins seeded per user).
 CREATE TABLE IF NOT EXISTS categories (
   id serial PRIMARY KEY,
   name text NOT NULL,
+  value text,
+  icon text,
+  builtin boolean NOT NULL DEFAULT false,
   owner text,
   created_at timestamp NOT NULL DEFAULT now()
 );
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS value text;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS icon text;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS builtin boolean NOT NULL DEFAULT false;
+-- Existing custom categories: their stored value equals their name.
+UPDATE categories SET value = name WHERE value IS NULL;
 -- Migrate legacy statuses to the current set. Compare via ::text so the old
 -- literals don't need to exist in the enum (they won't on a fresh install).
 UPDATE items SET status = 'stored' WHERE status::text = 'available';

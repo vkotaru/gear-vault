@@ -55,9 +55,11 @@ export interface IStorage {
   createSpot(spot: InsertSpot): Promise<Spot>;
   deleteSpot(id: number): Promise<boolean>;
 
-  // Category methods (user-defined, scoped to an owner)
+  // Category methods (scoped to an owner; built-ins are seeded per user)
   getCategories(owner: string): Promise<Category[]>;
-  createCategory(category: InsertCategory & { owner?: string }): Promise<Category>;
+  seedBuiltinCategories(owner: string): Promise<void>;
+  createCategory(category: { name: string; value: string; icon: string; builtin: boolean; owner: string }): Promise<Category>;
+  updateCategory(id: number, owner: string, name: string): Promise<Category | undefined>;
   deleteCategory(id: number, owner: string): Promise<boolean>;
 
   // Trip methods (scoped to an owner)

@@ -67,7 +67,7 @@ interface AddItemFormProps {
 
 export default function AddItemForm({ item, open: controlledOpen, onOpenChange }: AddItemFormProps = {}) {
   const isEdit = !!item;
-  const categories = useCategories();
+  const { list: categories } = useCategories();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;

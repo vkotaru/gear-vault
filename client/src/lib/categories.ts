@@ -1,5 +1,6 @@
 import { TentTree, Mountain, Bike, Droplets, CloudSnow, Shirt, Cpu, Wrench, Package, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { BUILTIN_CATEGORIES as BUILTIN_SEED } from "@shared/schema";
 
 export interface CategoryOption {
   value: string;
@@ -7,39 +8,40 @@ export interface CategoryOption {
   icon: LucideIcon;
 }
 
-// Built-in categories (always available). Users can add more via Settings,
-// which are merged in at runtime by the useCategories hook.
-export const BUILTIN_CATEGORIES: CategoryOption[] = [
-  { value: "camping", label: "Camping", icon: TentTree },
-  { value: "hiking", label: "Hiking", icon: Mountain },
-  { value: "biking", label: "Biking", icon: Bike },
-  { value: "water", label: "Water", icon: Droplets },
-  { value: "winter", label: "Winter", icon: CloudSnow },
-  { value: "clothing", label: "Clothing", icon: Shirt },
-  { value: "electronics", label: "Electronics", icon: Cpu },
-  { value: "utilities", label: "Utilities", icon: Wrench },
-  { value: "other", label: "Other", icon: Package },
-];
+// Resolve a stored icon key (e.g. "camping") to a Lucide icon component.
+const ICONS: Record<string, LucideIcon> = {
+  camping: TentTree,
+  hiking: Mountain,
+  biking: Bike,
+  water: Droplets,
+  winter: CloudSnow,
+  clothing: Shirt,
+  electronics: Cpu,
+  utilities: Wrench,
+  other: Package,
+  tag: Tag,
+};
 
-// Kept for existing imports; built-ins only. Prefer useCategories() for the
-// full list including a user's custom categories.
-export const CATEGORIES = BUILTIN_CATEGORIES;
-
-const BUILTIN_BY_VALUE: Record<string, CategoryOption> = Object.fromEntries(
-  BUILTIN_CATEGORIES.map((c) => [c.value, c])
-);
-
-export const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
-  BUILTIN_CATEGORIES.map((c) => [c.value, c.label])
-);
-
-// Title-case a raw category value for display (used for custom categories).
-export function categoryLabel(value: string): string {
-  return BUILTIN_BY_VALUE[value]?.label
-    || value.charAt(0).toUpperCase() + value.slice(1);
+export function iconForKey(key: string | null | undefined): LucideIcon {
+  return (key && ICONS[key]) || Tag;
 }
 
-// Icon for any category value; custom categories fall back to a tag icon.
-export function categoryIcon(value: string): LucideIcon {
-  return BUILTIN_BY_VALUE[value]?.icon || Tag;
+// Built-in categories with resolved icons — used as a fallback before the
+// user's category list has loaded from the server.
+export const BUILTIN_CATEGORIES: CategoryOption[] = BUILTIN_SEED.map((c) => ({
+  value: c.value,
+  label: c.name,
+  icon: iconForKey(c.icon),
+}));
+
+// Kept for any remaining static callers.
+export const CATEGORIES = BUILTIN_CATEGORIES;
+
+const BUILTIN_LABELS: Record<string, string> = Object.fromEntries(
+  BUILTIN_SEED.map((c) => [c.value, c.name])
+);
+
+// Static label fallback (title-cases unknown values).
+export function categoryLabel(value: string): string {
+  return BUILTIN_LABELS[value] || value.charAt(0).toUpperCase() + value.slice(1);
 }

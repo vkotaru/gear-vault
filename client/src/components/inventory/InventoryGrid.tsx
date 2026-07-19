@@ -21,7 +21,7 @@ export default function InventoryGrid({
 }: InventoryGridProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const categories = useCategories();
+  const { list: categories } = useCategories();
 
   const { data: items = [], isLoading, isError, error } = useQuery<Item[]>({
     queryKey: [queryKey],

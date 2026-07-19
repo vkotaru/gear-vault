@@ -4,7 +4,7 @@ import { Tag } from "lucide-react";
 import type { Item } from "@shared/schema";
 import type { ViewMode } from "@/hooks/use-view-mode";
 import { statusBadgeClass, statusLabel } from "@/lib/status";
-import { categoryLabel } from "@/lib/categories";
+import { useCategories } from "@/hooks/use-categories";
 
 interface GearItemsViewProps {
   items: Item[];
@@ -31,6 +31,7 @@ function Thumb({ item, className }: { item: Item; className?: string }) {
 }
 
 export default function GearItemsView({ items, view, renderMenu }: GearItemsViewProps) {
+  const { labelFor: categoryLabel } = useCategories();
   const [, navigate] = useLocation();
   const go = (item: Item) => navigate(`/items/${item.id}`);
   // Stop card navigation when interacting with the actions menu.

@@ -24,7 +24,7 @@ export default function AllGear() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [view, setView] = useViewMode("allgear-view");
-  const categories = useCategories();
+  const { list: categories } = useCategories();
 
   const { data: items, isLoading } = useQuery<Item[]>({
     queryKey: ['/api/items']
